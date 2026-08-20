@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CineFlow AI — From Story to Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #060608;
+  --bg-1: #0B0A10;
+  --bg-2: #131118;
+  --bg-3: #1C1824;
+  --border: rgba(196,163,255,0.10);
+  --border-strong: rgba(196,163,255,0.24);
+  --violet: #9B5CF6;
+  --violet-dim: #7A3FDB;
+  --cyan: #7FA84A;
+  --teal: #4C8BE0;
+  --amber: #E0B84C;
+  --orange: #C97A3D;
+  --red: #EF5F6B;
+  --green: #4CAF6D;
+  --pink: #F2569E;
+  --text-0: #F6F3FB;
+  --text-1: #DAD1EC;
+  --text-2: #A99FC2;
+  --text-3: #6E6588;
+  --grad-primary: linear-gradient(135deg, #9B5CF6 0%, #F2569E 60%, #C97A3D 100%);
+  --grad-warm: linear-gradient(135deg, #7FA84A 0%, #4CAF6D 50%, #4C8BE0 100%);
+  --radius: 16px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(155,92,246,0.20), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 10%, rgba(242,86,158,0.12), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(127,168,74,0.12), transparent 60%);
+  background-attachment: fixed;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-0);
+  overflow-x: hidden;
+}
+h1,h2,h3,.display{ font-family:'Space Grotesk', sans-serif; letter-spacing:-0.01em; }
+a{ color:inherit; text-decoration:none; }
+
+/* ---------- NAV ---------- */
+nav{
+  position: sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 18px 6vw;
+  background: rgba(6,6,8,0.75);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; }
+.brand .logo-emoji{ font-size:22px; }
+.nav-links{ display:flex; align-items:center; gap:28px; font-size:13.5px; color:var(--text-2); }
+.nav-links a:hover{ color:var(--text-0); }
+.nav-actions{ display:flex; gap:10px; }
+.btn{ padding:10px 20px; border-radius:10px; font-size:13.5px; font-weight:600; cursor:pointer; border:none; transition:.15s; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary{ background:var(--grad-primary); color:white; }
+.btn-primary:hover{ opacity:0.92; transform:translateY(-1px); }
+.btn-ghost{ background:transparent; color:var(--text-1); border:1px solid var(--border-strong); }
+.btn-ghost:hover{ background:var(--bg-2); }
+.btn-lg{ padding:14px 28px; font-size:15px; border-radius:12px; }
+
+/* ---------- HERO ---------- */
+.hero{
+  padding: 100px 6vw 80px;
+  text-align:center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 16px; border-radius:999px;
+  background: var(--bg-2); border:1px solid var(--border-strong);
+  font-size:12px; color:var(--text-2); margin-bottom:26px;
+}
+.eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.hero h1{ font-size:52px; line-height:1.08; margin-bottom:22px; }
+.hero h1 .grad{ background:var(--grad-primary); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero p{ font-size:17px; color:var(--text-2); line-height:1.6; max-width:620px; margin:0 auto 36px; }
+.hero-actions{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+.hero-note{ margin-top:20px; font-size:12.5px; color:var(--text-3); }
+
+/* ---------- PIPELINE STRIP ---------- */
+.pipeline-strip{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  flex-wrap:wrap; max-width:920px; margin: 60px auto 0; padding: 0 6vw;
+  font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-2);
+}
+.pipeline-strip .node{ padding:8px 14px; border-radius:8px; background:var(--bg-2); border:1px solid var(--border); white-space:nowrap; }
+.pipeline-strip .arrow{ color:var(--text-3); }
+
+/* ---------- SECTIONS ---------- */
+section{ padding: 90px 6vw; max-width: 1200px; margin:0 auto; }
+.section-head{ text-align:center; max-width:600px; margin:0 auto 56px; }
+.section-head .tag{ font-size:12.5px; color:var(--pink); font-weight:600; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
+.section-head h2{ font-size:34px; margin-bottom:14px; }
+.section-head p{ color:var(--text-2); font-size:15px; line-height:1.6; }
+
+/* ---------- FEATURE GRID ---------- */
+.feature-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.feature-card{
+  background: linear-gradient(180deg, rgba(26,32,54,0.5), rgba(19,24,41,0.5));
+  border:1px solid var(--border); border-radius: var(--radius);
+  padding: 28px 24px; transition:.2s;
+}
+.feature-card:hover{ border-color:var(--border-strong); transform:translateY(-3px); }
+.feature-card .ic{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:16px; }
+.feature-card h3{ font-size:16px; margin-bottom:8px; }
+.feature-card p{ font-size:13px; color:var(--text-2); line-height:1.55; }
+.feature-card .status{ display:inline-block; margin-top:12px; font-size:10.5px; padding:3px 9px; border-radius:6px; font-weight:600; }
+.status-live{ background:rgba(76,175,109,0.15); color:var(--green); }
+.status-soon{ background:rgba(224,184,76,0.15); color:var(--amber); }
+
+/* ---------- HOW IT WORKS ---------- */
+.steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+.step{ text-align:center; padding:0 10px; }
+.step .num{
+  width:40px; height:40px; border-radius:50%; margin:0 auto 16px;
+  background:var(--grad-primary); display:flex; align-items:center; justify-content:center;
+  font-family:'Space Grotesk'; font-weight:700; font-size:15px; color:white;
+}
+.step h4{ font-size:14.5px; margin-bottom:8px; }
+.step p{ font-size:12.5px; color:var(--text-2); line-height:1.5; }
+
+/* ---------- ROLE CARDS ---------- */
+.role-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.role-card{
+  background: linear-gradient(135deg, rgba(155,92,246,0.08), rgba(242,86,158,0.05));
+  border:1px solid var(--border-strong); border-radius: var(--radius);
+  padding: 34px;
+}
+.role-card .emoji{ font-size:32px; margin-bottom:14px; display:block; }
+.role-card h3{ font-size:19px; margin-bottom:10px; }
+.role-card p{ font-size:13.5px; color:var(--text-2); line-height:1.6; margin-bottom:20px; }
+.role-card ul{ list-style:none; margin-bottom:22px; }
+.role-card li{ font-size:13px; color:var(--text-1); padding:6px 0; display:flex; align-items:center; gap:8px; }
+.role-card li:before{ content:"✓"; color:var(--green); font-weight:700; }
+
+/* ---------- TECH STRIP ---------- */
+.tech-strip{
+  display:flex; justify-content:center; gap:36px; flex-wrap:wrap;
+  padding: 40px 6vw; border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+}
+.tech-item{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-2); }
+
+/* ---------- CTA ---------- */
+.cta{
+  text-align:center; padding: 100px 6vw;
+  background: radial-gradient(ellipse 700px 400px at 50% 50%, rgba(155,92,246,0.15), transparent 70%);
+}
+.cta h2{ font-size:36px; margin-bottom:16px; }
+.cta p{ color:var(--text-2); font-size:15px; margin-bottom:32px; }
+
+/* ---------- FOOTER ---------- */
+footer{ padding: 40px 6vw; border-top:1px solid var(--border); text-align:center; color:var(--text-3); font-size:12.5px; }
+
+@media (max-width: 860px){
+  .hero h1{ font-size:34px; }
+  .feature-grid{ grid-template-columns:1fr; }
+  .steps{ grid-template-columns:1fr 1fr; }
+  .role-grid{ grid-template-columns:1fr; }
+  .nav-links{ display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><span class="logo-emoji">🎬</span> CineFlow AI</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How it Works</a>
+    <a href="#for-you">For Directors & Producers</a>
+  </div>
+  <div class="nav-actions">
+    <a href="login.html" class="btn btn-ghost">Sign In</a>
+    <a href="register.html" class="btn btn-primary">Get Started</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="eyebrow"><span class="dot"></span> Built for Agentic Cinema: The Blockbuster Hackathon</div>
+  <h1>From Story to Screen —<br><span class="grad">Powered by Autonomous AI Agents</span></h1>
+  <p>CineFlow AI turns a movie idea or screenplay into an investor-ready production blueprint. A Gemini Coordinator reasons about your project and orchestrates specialized agents — then a real producer marketplace connects you to the people who can actually fund it.</p>
+  <div class="hero-actions">
+    <a href="register.html" class="btn btn-primary btn-lg">Get Started Free →</a>
+    <a href="login.html" class="btn btn-ghost btn-lg">Sign In</a>
+  </div>
+  <div class="hero-note">No credit card. Real accounts, real data — every number starts at zero until you make it real.</div>
+</div>
+
+<div class="pipeline-strip">
+  <span class="node">💡 Idea</span><span class="arrow">→</span>
+  <span class="node">🧭 Gemini Coordinator</span><span class="arrow">→</span>
+  <span class="node">🎭 Script Agent</span><span class="arrow">→</span>
+  <span class="node">🌍 Producer Match</span><span class="arrow">→</span>
+  <span class="node">💬 Connect & Message</span>
+</div>
+
+<section id="features">
+  <div class="section-head">
+    <div class="tag">Platform</div>
+    <h2>Everything a director needs, in one place</h2>
+    <p>Built with Gemini, FastAPI, and ClickHouse — real agent orchestration, not a chatbot wrapper.</p>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="ic" style="background:rgba(155,92,246,0.15); color:var(--violet);">🧭</div>
+      <h3>Gemini Coordinator</h3>
+      <p>Reasons about your idea or screenplay and dynamically plans which specialized agents to run — not a fixed pipeline.</p>
+      <span class="status status-live">● Live</span>
+    </div>
+    <div class="feature-card">
+      <div class="ic" style="background:rgba(155,92,246,0.15); color:var(--violet);">🎭</div>
+      <h3>Script Agent</h3>
+      <p>Real structured screenplay analysis — genre, characters, scene breakdown, VFX needs, and shooting complexity.</p>
+      <span class="status status-live">● Live</span>
+    </div>
+    <div class="feature-card">
+      <div class="ic" style="background:rgba(127,168,74,0.15); color:var(--cyan);">🌍</div>
+      <h3>Producer Marketplace</h3>
+      <p>Filter real producers by country, genre, budget, and language. Connect, get accepted, and message directly.</p>
+      <span class="status status-live">● Live</span>
+    </div>
+    <div class="feature-card">
+      <div class="ic" style="background:rgba(224,184,76,0.15); color:var(--amber);">💰</div>
+      <h3>Budget Agent</h3>
+      <p>Category-by-category cost breakdown with min/expected/max estimates, clearly labeled as AI estimates.</p>
+      <span class="status status-soon">◐ In Progress</span>
+    </div>
+    <div class="feature-card">
+      <div class="ic" style="background:rgba(76,139,224,0.15); color:var(--teal);">📅</div>
+      <h3>Scheduling Agent</h3>
+      <p>Production calendar generation across pre-production, casting, filming, and post — with real dependencies.</p>
+      <span class="status status-soon">◐ In Progress</span>
+    </div>
+    <div class="feature-card">
+      <div class="ic" style="background:rgba(242,86,158,0.15); color:var(--pink);">📊</div>
+      <h3>Live Analytics</h3>
+      <p>ClickHouse-backed dashboards for agent success rates, execution timing, and budget trends across projects.</p>
+      <span class="status status-live">● Live</span>
+    </div>
+  </div>
+</section>
+
+<div class="tech-strip">
+  <div class="tech-item">⚡ Gemini</div>
+  <div class="tech-item">🗄️ ClickHouse</div>
+  <div class="tech-item">🔐 Real JWT Auth</div>
+  <div class="tech-item">📡 Real-time SSE</div>
+  <div class="tech-item">🐘 FastAPI</div>
+</div>
+
+<section id="how-it-works">
+  <div class="section-head">
+    <div class="tag">Process</div>
+    <h2>How it works</h2>
+    <p>Four steps from a loose idea to a real conversation with a producer.</p>
+  </div>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><h4>Submit your idea</h4><p>A logline or a full screenplay — the Coordinator adapts either way.</p></div>
+    <div class="step"><div class="num">2</div><h4>Watch agents work</h4><p>Real-time status as Gemini genuinely analyzes your production, live.</p></div>
+    <div class="step"><div class="num">3</div><h4>Find your producer</h4><p>Filter a real marketplace by genre, budget, and country. Send a request.</p></div>
+    <div class="step"><div class="num">4</div><h4>Connect & message</h4><p>Once accepted, chat directly — no middleman, no fake inbox.</p></div>
+  </div>
+</section>
+
+<section id="for-you">
+  <div class="section-head">
+    <div class="tag">Two sides, one platform</div>
+    <h2>Built for both ends of the table</h2>
+  </div>
+  <div class="role-grid">
+    <div class="role-card">
+      <span class="emoji">🎥</span>
+      <h3>For Directors</h3>
+      <p>Turn your idea into a structured, data-backed proposal — then find the producer whose money, genre interest, and geography actually match your project.</p>
+      <ul>
+        <li>Real-time AI Studio pipeline</li>
+        <li>Filterable producer marketplace</li>
+        <li>Track every request you've sent</li>
+        <li>Direct messaging once accepted</li>
+      </ul>
+      <a href="register.html" class="btn btn-primary">Join as a Director</a>
+    </div>
+    <div class="role-card">
+      <span class="emoji">💼</span>
+      <h3>For Producers</h3>
+      <p>Discover vetted, AI-analyzed projects before you ever take a meeting — see the real production blueprint, not just a pitch deck.</p>
+      <ul>
+        <li>Real inbox of incoming requests</li>
+        <li>Accept or decline with one click</li>
+        <li>Build your own public profile</li>
+        <li>Message directors you've accepted</li>
+      </ul>
+      <a href="register.html" class="btn btn-primary">Join as a Producer</a>
+    </div>
+  </div>
+</section>
+
+<div class="cta">
+  <h2>Ready to put your idea into production?</h2>
+  <p>Free to start. Your dashboard begins at zero — every number after that is real.</p>
+  <a href="register.html" class="btn btn-primary btn-lg">Create Your Account →</a>
+</div>
+
+<footer>
+  🎬 CineFlow AI — Built for Agentic Cinema: The Blockbuster Hackathon · Powered by Gemini & ClickHouse
+</footer>
+
+</body>
+</html>

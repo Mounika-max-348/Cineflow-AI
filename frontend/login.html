@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In — CineFlow AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #060608;
+  --bg-1: #0B0A10;
+  --bg-2: #131118;
+  --border: rgba(196,163,255,0.14);
+  --violet: #9B5CF6;
+  --pink: #F2569E;
+  --olive: #7FA84A;
+  --blue: #4C8BE0;
+  --red: #EF5F6B;
+  --green: #4CAF6D;
+  --text-0: #F6F3FB;
+  --text-1: #D2C8E4;
+  --text-2: #948BAE;
+  --grad-primary: linear-gradient(135deg, #9B5CF6 0%, #F2569E 60%, #C97A3D 100%);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  min-height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(155,92,246,0.20), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 10%, rgba(242,86,158,0.12), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(127,168,74,0.12), transparent 60%);
+  font-family: 'Inter', sans-serif;
+  color: var(--text-0);
+  padding: 20px;
+}
+.card{
+  width: 100%; max-width: 420px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.logo{
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:24px;
+  background: var(--grad-primary); -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin-bottom: 6px;
+}
+h1{ font-family:'Space Grotesk', sans-serif; font-size:22px; margin-bottom: 6px; }
+.sub{ color: var(--text-2); font-size: 14px; margin-bottom: 28px; }
+label{ display:block; font-size:13px; color:var(--text-1); margin-bottom:6px; margin-top:16px; }
+input{
+  width:100%; padding:12px 14px; border-radius:10px;
+  background: var(--bg-2); border:1px solid var(--border); color:var(--text-0);
+  font-family:'Inter',sans-serif; font-size:14px; outline:none;
+}
+input:focus{ border-color: var(--violet); }
+button{
+  width:100%; margin-top:24px; padding:13px; border:none; border-radius:10px;
+  background: var(--grad-primary); color:white; font-weight:600; font-size:15px;
+  cursor:pointer; font-family:'Inter',sans-serif;
+}
+button:disabled{ opacity:0.6; cursor:not-allowed; }
+.error{ color: var(--red); font-size: 13px; margin-top: 14px; display:none; }
+.footer{ margin-top: 22px; text-align:center; font-size:13px; color:var(--text-2); }
+.footer a{ color: var(--pink); text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🎬 CineFlow AI</div>
+    <h1>Sign in</h1>
+    <div class="sub">Real accounts, real projects — nothing here is demo data.</div>
+
+    <form id="loginForm">
+      <label>Email</label>
+      <input type="email" id="email" required autocomplete="email" />
+      <label>Password</label>
+      <input type="password" id="password" required autocomplete="current-password" />
+      <div class="error" id="errorMsg"></div>
+      <button type="submit" id="submitBtn">Sign In</button>
+    </form>
+
+    <div class="footer">No account yet? <a href="register.html">Create one</a></div>
+  </div>
+
+<script src="config.js"></script>
+<script>
+const API_BASE = window.API_BASE;
+const errorMsg = document.getElementById('errorMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+// Already logged in? Skip straight to the app.
+if(localStorage.getItem('cineflow_token')){
+  window.location.href = 'cineflow-ai.html';
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorMsg.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      errorMsg.textContent = data.detail || 'Login failed.';
+      errorMsg.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In';
+      return;
+    }
+
+    localStorage.setItem('cineflow_token', data.access_token);
+    localStorage.setItem('cineflow_user', JSON.stringify(data.user));
+    window.location.href = 'cineflow-ai.html';
+  } catch (err) {
+    errorMsg.textContent = 'Could not reach the backend. Is uvicorn running on :8000?';
+    errorMsg.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>

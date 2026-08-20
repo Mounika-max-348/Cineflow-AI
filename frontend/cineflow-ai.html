@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CineFlow AI — From Story to Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="vendor/chart.umd.min.js"></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg: #060608;
+  --bg-1: #0B0A10;
+  --bg-2: #131118;
+  --bg-3: #1C1824;
+  --border: rgba(196,163,255,0.10);
+  --border-strong: rgba(196,163,255,0.24);
+  --violet: #9B5CF6;
+  --violet-dim: #7A3FDB;
+  --cyan: #7FA84A;      /* olive, replaces cyan across the whole UI */
+  --teal: #4C8BE0;      /* blue, replaces teal across the whole UI */
+  --amber: #E0B84C;
+  --orange: #C97A3D;
+  --red: #EF5F6B;
+  --green: #4CAF6D;
+  --pink: #F2569E;
+  --text-0: #F6F3FB;
+  --text-1: #DAD1EC;
+  --text-2: #A99FC2;
+  --text-3: #6E6588;
+  --grad-primary: linear-gradient(135deg, #9B5CF6 0%, #F2569E 60%, #C97A3D 100%);
+  --grad-warm: linear-gradient(135deg, #7FA84A 0%, #4CAF6D 50%, #4C8BE0 100%);
+  --grad-danger: linear-gradient(135deg, #EF5F6B 0%, #C97A3D 100%);
+  --shadow-glow: 0 0 40px rgba(155,92,246,0.18);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(155,92,246,0.18), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 10%, rgba(242,86,158,0.10), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(127,168,74,0.10), transparent 60%);
+  background-attachment: fixed;
+  color: var(--text-0);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+::selection{ background: rgba(139,92,246,0.35); }
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background: var(--bg-3); border-radius: 8px; }
+::-webkit-scrollbar-track{ background: transparent; }
+h1,h2,h3,h4, .display{ font-family:'Space Grotesk', sans-serif; letter-spacing:-0.01em; }
+.mono{ font-family:'JetBrains Mono', monospace; }
+a{ color:inherit; text-decoration:none; }
+button{ font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+:focus-visible{ outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ============ SHELL ============ */
+.shell{ display:flex; min-height:100vh; }
+
+.sidebar{
+  width: 248px; flex-shrink:0;
+  background: linear-gradient(180deg, rgba(19,24,41,0.9), rgba(13,17,32,0.9));
+  border-right: 1px solid var(--border);
+  padding: 22px 14px;
+  display:flex; flex-direction:column; gap: 26px;
+  position: sticky; top:0; height:100vh;
+}
+.brand{ display:flex; align-items:center; gap:10px; padding: 0 8px; }
+.brand-mark{
+  width:34px; height:34px; border-radius:9px;
+  background: var(--grad-primary);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; box-shadow: 0 0 22px rgba(124,58,237,0.5);
+  flex-shrink:0;
+}
+.brand-text{ display:flex; flex-direction:column; line-height:1.15; }
+.brand-text b{ font-family:'Space Grotesk'; font-size:15px; font-weight:700; }
+.brand-text span{ font-size:10px; color:var(--text-3); letter-spacing:0.08em; text-transform:uppercase; }
+
+.nav-group{ display:flex; flex-direction:column; gap:3px; }
+.nav-label{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-3); padding: 10px 12px 4px; }
+.nav-item{
+  display:flex; align-items:center; gap:11px;
+  padding: 9px 12px; border-radius: 10px;
+  color: var(--text-2); font-size: 13.5px; font-weight:500;
+  transition: all .18s ease; position:relative; width:100%; text-align:left;
+}
+.nav-item .ic{ width:17px; height:17px; flex-shrink:0; opacity:0.85; }
+.nav-item:hover{ background: rgba(139,92,246,0.08); color: var(--text-0); }
+.nav-item.active{
+  background: linear-gradient(90deg, rgba(139,92,246,0.18), rgba(34,211,238,0.05));
+  color: var(--text-0);
+  box-shadow: inset 2px 0 0 var(--violet);
+}
+.sidebar-foot{ margin-top:auto; padding:12px; border-radius:12px; background:var(--bg-3); border:1px solid var(--border); }
+.sidebar-foot .row{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-2); }
+.dot-live{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+.main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+
+/* TOPBAR */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 14px 28px; border-bottom:1px solid var(--border);
+  background: rgba(7,9,18,0.55); backdrop-filter: blur(14px);
+  position: sticky; top:0; z-index:20;
+}
+.search-box{
+  display:flex; align-items:center; gap:9px;
+  background: var(--bg-2); border:1px solid var(--border);
+  padding: 9px 14px; border-radius: 10px; width: 360px; color:var(--text-3);
+  transition: border-color .2s;
+}
+.search-box:focus-within{ border-color: var(--violet-dim); }
+.search-box input{ background:none; border:none; color:var(--text-0); font-size:13px; width:100%; }
+.search-box input::placeholder{ color: var(--text-3); }
+.kbd{ font-size:10px; padding:2px 6px; border-radius:5px; background:var(--bg-3); color:var(--text-3); border:1px solid var(--border); }
+.top-actions{ display:flex; align-items:center; gap:16px; }
+.icon-btn{ position:relative; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text-2); transition:.18s; }
+.icon-btn:hover{ background: var(--bg-2); color:var(--text-0); }
+.badge-dot{ position:absolute; top:6px; right:7px; width:7px; height:7px; border-radius:50%; background:var(--pink); box-shadow:0 0 6px var(--pink); }
+.cloud-status{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-2); padding:6px 12px; border-radius:20px; background:var(--bg-2); border:1px solid var(--border); }
+.profile-chip{ display:flex; align-items:center; gap:9px; padding:5px 10px 5px 5px; border-radius:24px; background:var(--bg-2); border:1px solid var(--border); }
+.avatar{ width:28px; height:28px; border-radius:50%; background: var(--grad-warm); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+
+.page{ padding: 28px 32px 60px; display:none; animation: fadein .4s ease; }
+.page.active{ display:block; }
+@keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+/* ============ ICONS (inline svg via mask helper) ============ */
+.ic{ display:inline-block; width:16px; height:16px; }
+svg{ display:block; }
+
+/* ============ GENERIC UI ============ */
+.eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; color:var(--cyan); font-weight:600; margin-bottom:6px; }
+.pagehead{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px; flex-wrap:wrap; gap:14px; }
+.pagehead h1{ font-size:26px; font-weight:700; }
+.pagehead p{ color:var(--text-2); font-size:13.5px; margin-top:5px; }
+
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border-radius:11px; font-size:13.5px; font-weight:600; transition:.18s; }
+.btn-primary{ background: var(--grad-primary); color:#fff; box-shadow: 0 6px 24px rgba(124,58,237,0.35); }
+.btn-primary:hover{ transform:translateY(-1px); box-shadow: 0 10px 30px rgba(124,58,237,0.5); }
+.btn-ghost{ background: var(--bg-2); border:1px solid var(--border-strong); color:var(--text-1); }
+.btn-ghost:hover{ background:var(--bg-3); color:var(--text-0); }
+.btn-sm{ padding:7px 13px; font-size:12.5px; border-radius:9px; }
+
+.card{ background: linear-gradient(180deg, rgba(26,32,54,0.6), rgba(19,24,41,0.6)); border:1px solid var(--border); border-radius: var(--radius); }
+.profile-card-light{
+  background: linear-gradient(135deg, #F4F2F8, #E8E4F0);
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.profile-avatar-lg{
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--grad-primary);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 19px; font-family: 'Space Grotesk';
+  flex-shrink: 0;
+}
+.glass{ backdrop-filter: blur(10px); }
+
+/* hero */
+.hero{
+  border-radius: 22px; padding: 34px 36px; position:relative; overflow:hidden;
+  background: linear-gradient(120deg, rgba(124,58,237,0.20), rgba(34,211,238,0.08)), var(--bg-1);
+  border: 1px solid var(--border-strong); margin-bottom: 26px;
+}
+.hero::before{
+  content:''; position:absolute; width:400px; height:400px; border-radius:50%;
+  background: radial-gradient(circle, rgba(34,211,238,0.25), transparent 70%);
+  top:-180px; right:-120px; filter: blur(10px);
+}
+.hero h1{ font-size:30px; font-weight:700; max-width:560px; position:relative; }
+.hero p{ color:var(--text-1); margin-top:10px; max-width: 520px; font-size:14px; position:relative; }
+.hero .actions{ display:flex; gap:12px; margin-top:22px; position:relative; }
+
+/* stat cards */
+.grid-stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:26px; }
+@media(max-width:1200px){ .grid-stats{ grid-template-columns:repeat(2,1fr);} }
+.stat-card{ padding:18px; }
+.stat-card .top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.stat-ic{ width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; }
+.stat-card .val{ font-size:24px; font-weight:700; font-family:'Space Grotesk'; }
+.stat-card .lbl{ font-size:12px; color:var(--text-2); margin-top:2px; }
+.trend{ font-size:11px; font-weight:600; display:flex; align-items:center; gap:3px; }
+.trend.up{ color:var(--green); } .trend.down{ color:var(--red); }
+
+.section-title{ font-size:16px; font-weight:700; font-family:'Space Grotesk'; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+
+.two-col{ display:grid; grid-template-columns: 1.5fr 1fr; gap:18px; }
+@media(max-width:1100px){ .two-col{ grid-template-columns:1fr; } }
+
+.activity-item{ display:flex; gap:12px; padding:13px 4px; border-bottom:1px solid var(--border); }
+.activity-item:last-child{ border-bottom:none; }
+.activity-ic{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.activity-item .txt b{ font-size:13px; font-weight:600; }
+.activity-item .txt p{ font-size:11.5px; color:var(--text-2); margin-top:2px; }
+.activity-item .time{ margin-left:auto; font-size:10.5px; color:var(--text-3); white-space:nowrap; }
+
+.qa-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+@media(max-width:1200px){ .qa-grid{ grid-template-columns:repeat(2,1fr); } }
+.qa-card{ padding:16px; text-align:left; display:flex; flex-direction:column; gap:10px; transition:.2s; }
+.qa-card:hover{ border-color:var(--border-strong); transform:translateY(-2px); background: rgba(139,92,246,0.06); }
+.qa-card .ic-wrap{ width:32px; height:32px; border-radius:9px; background:var(--bg-3); display:flex; align-items:center; justify-content:center; }
+.qa-card b{ font-size:12.5px; font-weight:600; }
+
+/* ============ AGENT PIPELINE (AI STUDIO) ============ */
+.pipeline-rail{ position:relative; padding-left:26px; }
+.pipeline-rail::before{
+  content:''; position:absolute; left:9px; top:14px; bottom:14px; width:2px;
+  background: linear-gradient(180deg, var(--violet), var(--cyan), var(--teal), var(--amber), var(--red), var(--pink));
+  opacity:0.35;
+}
+.agent-card{ position:relative; margin-bottom:16px; }
+.agent-node{
+  position:absolute; left:-26px; top:26px; width:20px; height:20px; border-radius:50%;
+  background: var(--bg-2); border:2px solid var(--violet); display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 0 0 4px rgba(7,9,18,1), 0 0 16px rgba(139,92,246,0.6);
+}
+.agent-node.done{ border-color:var(--green); box-shadow:0 0 0 4px rgba(7,9,18,1), 0 0 16px rgba(52,211,153,0.6); }
+.agent-node .core{ width:8px; height:8px; border-radius:50%; background:var(--violet); animation: corepulse 1.6s infinite; }
+.agent-node.done .core{ background:var(--green); animation:none; }
+@keyframes corepulse{ 0%,100%{ transform:scale(1); opacity:1;} 50%{ transform:scale(1.5); opacity:0.5;} }
+
+.agent-card .head{ display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; cursor:pointer; }
+.agent-card .head-left{ display:flex; align-items:center; gap:12px; }
+.agent-avatar{ width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+.agent-title{ font-size:14.5px; font-weight:700; font-family:'Space Grotesk'; }
+.agent-status{ font-size:11.5px; color:var(--text-2); margin-top:2px; display:flex; align-items:center; gap:6px; }
+.status-pill{ font-size:10px; font-weight:600; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:0.04em; }
+.status-pill.running{ background:rgba(139,92,246,0.15); color:#C4B5FD; }
+.status-pill.done{ background:rgba(52,211,153,0.15); color:var(--green); }
+.status-pill.queued{ background:rgba(138,147,184,0.12); color:var(--text-2); }
+
+.progress-track{ height:6px; border-radius:10px; background:var(--bg-3); overflow:hidden; margin: 0 20px 16px; }
+.progress-fill{ height:100%; border-radius:10px; background: var(--grad-primary); width:0%; transition: width 1.4s cubic-bezier(.2,.7,.3,1); }
+
+.agent-body{ padding: 0 20px 20px; border-top:1px solid var(--border); display:none; }
+.agent-body.open{ display:block; padding-top:16px; }
+.chev{ transition: transform .2s; color:var(--text-2); }
+.chev.open{ transform: rotate(180deg); }
+
+.mini-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+.mini-stat{ background:var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:11px 13px; }
+.mini-stat .l{ font-size:10.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.05em; }
+.mini-stat .v{ font-size:15px; font-weight:700; font-family:'Space Grotesk'; margin-top:3px; }
+
+.tag{ display:inline-flex; padding:4px 10px; border-radius:20px; background:var(--bg-3); border:1px solid var(--border); font-size:11px; color:var(--text-1); margin:3px 4px 0 0; }
+.confidence{ display:flex; align-items:center; gap:10px; margin-top:14px; }
+.confidence .ring{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; font-family:'Space Grotesk'; flex-shrink:0; }
+
+.budget-bars{ display:flex; flex-direction:column; gap:10px; }
+.budget-row{ display:grid; grid-template-columns: 110px 1fr 70px; align-items:center; gap:10px; }
+.budget-row .lbl{ font-size:12px; color:var(--text-2); }
+.budget-row .bar-bg{ height:9px; border-radius:6px; background:var(--bg-3); overflow:hidden; }
+.budget-row .bar-fill{ height:100%; border-radius:6px; }
+.budget-row .amt{ font-size:12px; font-family:'JetBrains Mono'; text-align:right; color:var(--text-1); }
+.total-budget{ margin-top:16px; padding:14px 16px; border-radius:12px; background:linear-gradient(90deg, rgba(139,92,246,0.14), rgba(34,211,238,0.06)); border:1px solid var(--border-strong); display:flex; align-items:center; justify-content:space-between; }
+.total-budget .v{ font-size:22px; font-weight:700; font-family:'Space Grotesk'; }
+
+/* producer mini cards inside agent */
+.prod-mini-scroll{ display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; }
+.prod-mini{ min-width:220px; background:var(--bg-2); border:1px solid var(--border); border-radius:12px; padding:14px; flex-shrink:0; }
+.prod-mini .ph{ width:38px; height:38px; border-radius:50%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; }
+.prod-mini b{ font-size:12.5px; }
+.prod-mini .co{ font-size:11px; color:var(--text-2); }
+.match-score{ margin-top:8px; display:flex; align-items:center; gap:6px; font-size:11px; }
+.match-score .bar{ flex:1; height:5px; background:var(--bg-3); border-radius:4px; overflow:hidden; }
+.match-score .bar span{ display:block; height:100%; background:var(--grad-primary); }
+
+/* gantt */
+.gantt{ display:flex; flex-direction:column; gap:8px; }
+.gantt-row{ display:grid; grid-template-columns: 150px 1fr; align-items:center; gap:12px; }
+.gantt-lbl{ font-size:12px; color:var(--text-1); font-weight:500; }
+.gantt-track{ position:relative; height:28px; background:var(--bg-2); border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+.gantt-bar{ position:absolute; top:3px; bottom:3px; border-radius:6px; display:flex; align-items:center; padding:0 10px; font-size:10px; font-weight:600; color:#0a0e17; white-space:nowrap; }
+
+.risk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:12px; }
+.risk-card{ background:var(--bg-2); border:1px solid var(--border); border-radius:12px; padding:15px; }
+.risk-card .rh{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.risk-level{ font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase; }
+.risk-card .sol{ font-size:11.5px; color:var(--text-2); margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.risk-bars{ display:flex; gap:16px; margin:8px 0; }
+.risk-bars .b{ flex:1; }
+.risk-bars .b .l{ font-size:10px; color:var(--text-3); margin-bottom:4px; }
+.risk-bars .b .track{ height:6px; background:var(--bg-3); border-radius:4px; overflow:hidden; }
+.risk-bars .b .track span{ display:block; height:100%; }
+
+/* ============ PRODUCER MARKETPLACE ============ */
+.filter-bar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; align-items:center; }
+.filter-select{ background:var(--bg-2); border:1px solid var(--border-strong); color:var(--text-0); padding:9px 13px; border-radius:10px; font-size:12.5px; }
+.filter-select option{ background:#161320; color:var(--text-0); }
+.prod-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+.prod-card{ padding:18px; display:flex; flex-direction:column; gap:10px; transition:.2s; }
+.prod-card:hover{ border-color:var(--border-strong); transform:translateY(-3px); box-shadow: var(--shadow-glow); }
+.prod-card .ph-row{ display:flex; gap:12px; align-items:center; }
+.prod-avatar{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; color:#fff; flex-shrink:0; }
+.prod-card .name{ font-size:14.5px; font-weight:700; font-family:'Space Grotesk'; }
+.prod-card .co{ font-size:11.5px; color:var(--text-2); }
+.prod-card .country{ font-size:11px; color:var(--text-3); margin-top:1px; }
+.prod-stats-row{ display:flex; justify-content:space-between; padding:10px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin:4px 0; }
+.prod-stats-row div{ text-align:center; flex:1; }
+.prod-stats-row .v{ font-size:13px; font-weight:700; font-family:'Space Grotesk'; }
+.prod-stats-row .l{ font-size:9.5px; color:var(--text-3); text-transform:uppercase; margin-top:2px; }
+.prod-tags{ display:flex; flex-wrap:wrap; gap:5px; }
+.prod-actions{ display:flex; gap:8px; margin-top:6px; }
+.prod-actions .btn{ flex:1; justify-content:center; padding:8px 10px; }
+.stars{ color:var(--amber); font-size:11px; letter-spacing:1px; }
+.follow-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.btn-follow{ padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; border:1px solid var(--border-strong); background:transparent; color:var(--text-0); transition:.15s; }
+.btn-follow:hover{ border-color:var(--violet); }
+.btn-follow.following{ background:var(--bg-3); color:var(--text-2); }
+.btn-follow.follow-active{ background:var(--grad-primary); border-color:transparent; color:#fff; }
+.follower-count{ font-size:11px; color:var(--text-3); }
+.stat-link{ cursor:pointer; }
+.stat-link:hover span:first-child{ text-decoration:underline; }
+.social-row{ display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--border); }
+.social-row:last-child{ border-bottom:none; }
+.social-avatar{ width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; flex-shrink:0; background:var(--grad-primary); }
+.social-row .info{ flex:1; min-width:0; }
+.social-row .info b{ font-size:13px; display:block; }
+.social-row .info span{ font-size:11px; color:var(--text-2); }
+.time-live{ cursor:default; }
+
+/* ============ PROJECTS ============ */
+.proj-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:18px; }
+.proj-card{ overflow:hidden; }
+.proj-poster{ height:150px; position:relative; display:flex; align-items:flex-end; padding:14px; }
+.proj-poster::after{ content:''; position:absolute; inset:0; background:linear-gradient(0deg, rgba(7,9,18,0.85), transparent 60%); }
+.proj-poster span{ position:relative; font-size:16px; font-weight:700; font-family:'Space Grotesk'; z-index:1; }
+.proj-body{ padding:16px; }
+.proj-meta{ display:flex; gap:8px; font-size:11px; color:var(--text-2); margin:6px 0 12px; }
+.proj-progress{ margin-top:8px; }
+.proj-progress .row{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-2); margin-bottom:5px; }
+.proj-progress .track{ height:6px; background:var(--bg-3); border-radius:6px; overflow:hidden; }
+.proj-progress .track span{ display:block; height:100%; background:var(--grad-primary); }
+.status-chip{ font-size:10px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase; }
+
+/* ============ INVESTMENT ============ */
+.fund-card{ padding:24px; margin-bottom:22px; }
+.fund-top{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+.fund-top .big{ font-size:28px; font-weight:700; font-family:'Space Grotesk'; }
+.fund-track{ height:14px; border-radius:10px; background:var(--bg-3); overflow:hidden; position:relative; }
+.fund-track .fill{ height:100%; background:var(--grad-primary); border-radius:10px; }
+.fund-legend{ display:flex; gap:22px; margin-top:14px; flex-wrap:wrap; }
+.fund-legend .li{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-2); }
+.fund-legend .sw{ width:9px; height:9px; border-radius:3px; }
+
+.offer-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:14px; }
+.offer-card{ padding:17px; }
+.offer-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.offer-amt{ font-size:19px; font-weight:700; font-family:'Space Grotesk'; color:var(--cyan); }
+.offer-actions{ display:flex; gap:8px; margin-top:12px; }
+
+/* ============ ANALYTICS ============ */
+.chart-card{ padding:20px; }
+.chart-wrap{ position:relative; height:240px; }
+
+/* Settings */
+.settings-row{ display:flex; justify-content:space-between; align-items:center; padding:16px 4px; border-bottom:1px solid var(--border); }
+.settings-row:last-child{ border-bottom:none; }
+.settings-row b{ font-size:13.5px; font-weight:600; }
+.settings-row p{ font-size:11.5px; color:var(--text-2); margin-top:2px; }
+.toggle{ width:40px; height:22px; border-radius:20px; background:var(--bg-3); border:1px solid var(--border); position:relative; transition:.2s; flex-shrink:0; }
+.toggle.on{ background: var(--grad-primary); }
+.toggle .knob{ position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:.2s; }
+.toggle.on .knob{ left:20px; }
+
+/* wizard modal */
+.modal-overlay{ position:fixed; inset:0; background:rgba(4,5,10,0.7); backdrop-filter: blur(6px); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+.modal-overlay.open{ display:flex; }
+.modal{ width:640px; max-width:100%; max-height:88vh; overflow-y:auto; background:var(--bg-1); border:1px solid var(--border-strong); border-radius:20px; padding:26px; box-shadow:0 30px 80px rgba(0,0,0,0.6); }
+.modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.wizard-steps{ display:flex; gap:8px; margin-bottom:22px; }
+.wizard-steps .st{ flex:1; height:4px; border-radius:4px; background:var(--bg-3); }
+.wizard-steps .st.active{ background: var(--grad-primary); }
+.field{ margin-bottom:14px; }
+.field label{ font-size:11.5px; color:var(--text-2); display:block; margin-bottom:6px; }
+.field input, .field select, .field textarea{ width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; color:var(--text-0); font-size:13px; font-family:inherit; }
+.field textarea{ resize:vertical; min-height:70px; }
+.field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.dropzone{ border:1.5px dashed var(--border-strong); border-radius:12px; padding:24px; text-align:center; color:var(--text-2); font-size:12.5px; background:var(--bg-2); }
+.wizard-loading{ text-align:center; padding: 30px 10px; }
+.spinner-ring{ width:64px; height:64px; margin:0 auto 18px; border-radius:50%; border:3px solid var(--bg-3); border-top-color: var(--violet); animation: spin 0.9s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+@media(max-width:900px){
+  .sidebar{ display:none; }
+  .grid-stats, .qa-grid{ grid-template-columns:repeat(2,1fr); }
+  .two-col{ grid-template-columns:1fr; }
+  .search-box{ width:200px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🎬</div>
+      <div class="brand-text"><b>CineFlow AI</b><span>Studio OS</span></div>
+    </div>
+
+    <nav class="nav-group" id="navGroup">
+      <button class="nav-item active" data-page="dashboard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+      <button class="nav-item" data-page="projects"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9L9 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>My Projects</button>
+      <button class="nav-item" data-page="studio"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/></svg>AI Studio</button>
+      <button class="nav-item" data-page="marketplace"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>Producer Marketplace</button>
+      <button class="nav-item" data-page="directors"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9L9 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12.5" r="2.2"/><path d="M8.5 16.5c.6-1.4 1.9-2.2 3.5-2.2s2.9.8 3.5 2.2"/></svg>Directors Workplace</button>
+      <button class="nav-item" data-page="analytics"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>Analytics</button>
+      <button class="nav-item" data-page="timeline"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Production Timeline</button>
+      <button class="nav-item" data-page="investment"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10a3 3 0 0 1 3-2c1.7 0 3 1 3 2.2 0 2.8-6 1.3-6 4.3 0 1.2 1.3 2.5 3 2.5s3-1 3-2.3"/></svg>Investment Center</button>
+      <button class="nav-item" data-page="settings"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="row"><span class="dot-live"></span> Render Cloud — 4 agents active</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- ============ TOPBAR ============ -->
+    <header class="topbar">
+      <div class="search-box">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="globalSearch" placeholder="Search projects, producers, agents…" />
+        <span class="kbd">⌘K</span>
+      </div>
+      <div class="top-actions">
+        <div class="cloud-status"><span class="dot-live"></span> Cloud synced</div>
+        <button class="icon-btn" aria-label="Notifications" id="notifBtn">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="badge-dot"></span>
+        </button>
+        <div class="profile-chip" id="profileChip" style="cursor:pointer;" title="Click to log out"><div class="avatar" id="avatarInitials">–</div><span id="profileName" style="font-size:12.5px;font-weight:600;">Loading…</span></div>
+      </div>
+    </header>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="page active" id="page-dashboard">
+      <div class="hero">
+        <div class="eyebrow" id="welcomeEyebrow">Welcome back</div>
+        <h1>From story to screen — powered by autonomous AI agents.</h1>
+        <p>Six specialized agents are standing by to break down your script, budget the production, match global producers, and schedule your shoot — all before your coffee gets cold.</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="openWizardBtn">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Create New Movie Project
+          </button>
+          <button class="btn btn-ghost" data-page="studio">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v18l15-9L5 3z"/></svg>
+            Open AI Studio
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-stats">
+        <div class="card stat-card">
+          <div class="top"><div class="stat-ic" style="background:rgba(155,92,246,0.15); color:var(--violet);">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9L9 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
+          </div></div>
+          <div class="val" id="statTotalProjects">–</div><div class="lbl">Total Projects</div>
+        </div>
+        <div class="card stat-card">
+          <div class="top"><div class="stat-ic" style="background:rgba(127,168,74,0.15); color:var(--cyan);">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>
+          </div></div>
+          <div class="val" id="statProducerMatches">–</div><div class="lbl">Matched Producers</div>
+        </div>
+        <div class="card stat-card">
+          <div class="top"><div class="stat-ic" style="background:rgba(76,139,224,0.15); color:var(--teal);">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17V7l10 5-10 5Z"/></svg>
+          </div></div>
+          <div class="val" id="statCompleted">–</div><div class="lbl">Completed Analyses</div>
+        </div>
+        <div class="card stat-card">
+          <div class="top"><div class="stat-ic" style="background:rgba(224,184,76,0.15); color:var(--amber);">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div></div>
+          <div class="val" id="statFunding">$0</div><div class="lbl">Funding Committed</div>
+        </div>
+        <div class="card stat-card">
+          <div class="top"><div class="stat-ic" style="background:rgba(242,86,158,0.15); color:var(--pink);">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/></svg>
+          </div></div>
+          <div class="val" id="statInProgress">–</div><div class="lbl">In Progress</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card" style="padding:20px;">
+          <div class="section-title">Quick Actions</div>
+          <div class="qa-grid">
+            <button class="card qa-card" id="openWizardBtn2"><div class="ic-wrap"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg></div><b>Upload Script</b></button>
+            <button class="card qa-card" data-page="studio"><div class="ic-wrap"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><b>Run AI Analysis</b></button>
+            <button class="card qa-card" data-page="marketplace"><div class="ic-wrap"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></div><b>Find Producers</b></button>
+            <button class="card qa-card" data-page="investment"><div class="ic-wrap"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></div><b>Connection Requests</b></button>
+            <button class="card qa-card" data-page="timeline"><div class="ic-wrap"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></div><b>Schedule Production</b></button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:20px;">
+          <div class="section-title">Recent Activity</div>
+          <div id="activityFeed">
+            <div class="activity-item"><div class="txt"><p style="color:var(--text-2);">Loading…</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MY PROJECTS ============ -->
+    <section class="page" id="page-projects">
+      <div class="pagehead">
+        <div><h1>My Projects</h1><p>Every production, from first draft to release.</p></div>
+        <button class="btn btn-primary" id="openWizardBtn3"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New Project</button>
+      </div>
+      <div class="proj-grid" id="projGrid"></div>
+    </section>
+
+    <!-- ============ AI STUDIO ============ -->
+    <section class="page" id="page-studio">
+      <div class="pagehead">
+        <div><h1>AI Studio</h1><p id="studioSubtitle">Select a project to run its real agent pipeline.</p></div>
+        <div class="status-pill" id="studioStatusPill" style="font-size:11px;">Idle</div>
+      </div>
+
+      <div class="card" style="padding:16px 20px; margin-bottom:18px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <select class="filter-select" id="studioProjectSelect" style="min-width:220px;">
+          <option value="">Loading your projects…</option>
+        </select>
+        <button class="btn btn-primary btn-sm" id="studioRunBtn" onclick="runStudioAnalysis()">▶ Run Real Analysis</button>
+        <span style="font-size:11.5px; color:var(--text-2);">This calls the real Gemini Coordinator — it isn't a replay.</span>
+      </div>
+
+      <div class="pipeline-rail" id="pipelineRail">
+        <!-- Populated entirely by JS from real SSE events. See renderAgentCard() below. -->
+      </div>
+    </section>
+
+    <!-- ============ PRODUCER MARKETPLACE ============ -->
+    <section class="page" id="page-marketplace">
+      <div class="pagehead">
+        <div><h1>Producer Marketplace</h1><p id="marketplaceSubtitle">Loading producer directory…</p></div>
+      </div>
+      <div class="filter-bar">
+        <select class="filter-select" id="filterCountry"><option value="all">All Countries</option></select>
+        <select class="filter-select" id="filterGenre"><option value="all">All Genres</option></select>
+        <select class="filter-select" id="filterBudget">
+          <option value="all">Budget Range</option>
+          <option value="0-1000000">Under $1M</option>
+          <option value="1000000-10000000">$1M – $10M</option>
+          <option value="10000000-999999999">$10M+</option>
+        </select>
+        <select class="filter-select" id="filterLanguage"><option value="all">Language</option></select>
+      </div>
+      <div class="prod-grid" id="prodGrid"></div>
+    </section>
+
+    <!-- ============ DIRECTORS WORKPLACE ============ -->
+    <section class="page" id="page-directors">
+      <div class="pagehead">
+        <div><h1>Directors Workplace</h1><p id="directorsSubtitle">Loading director directory…</p></div>
+      </div>
+      <div class="prod-grid" id="dirGrid"></div>
+    </section>
+
+    <!-- ============ ANALYTICS ============ -->
+    <section class="page" id="page-analytics">
+      <div class="pagehead"><div><h1>Analytics</h1><p>Production intelligence for Solstice Horizon.</p></div></div>
+      <div class="two-col" style="margin-bottom:18px;">
+        <div class="card chart-card"><div class="section-title">Budget Allocation</div><div class="chart-wrap"><canvas id="chartBudget"></canvas></div></div>
+        <div class="card chart-card"><div class="section-title">Department Expenses</div><div class="chart-wrap"><canvas id="chartDept"></canvas></div></div>
+      </div>
+      <div class="two-col">
+        <div class="card chart-card"><div class="section-title">Production Progress</div><div class="chart-wrap"><canvas id="chartProgress"></canvas></div></div>
+        <div class="card" style="padding:20px;">
+          <div class="section-title">Risk Heatmap</div>
+          <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px;" id="heatmap"></div>
+          <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:10.5px; color:var(--text-3);"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TIMELINE ============ -->
+    <section class="page" id="page-timeline">
+      <div class="pagehead"><div><h1>Production Timeline</h1><p>Generated by the Scheduling Agent once it's built.</p></div></div>
+      <div class="card" style="padding:32px; text-align:center; color:var(--text-2);">
+        <div style="font-size:32px; margin-bottom:10px;">📅</div>
+        <div style="font-size:14px; font-weight:600; color:var(--text-0); margin-bottom:6px;">Scheduling Agent not yet implemented</div>
+        <p style="font-size:12.5px;">The Coordinator already plans for this agent in every pipeline run — see the <a href="#" data-page="studio" style="color:var(--pink);">AI Studio</a> tab, where it currently shows as "Not Implemented." This page will render a real Gantt chart once that agent is built.</p>
+      </div>
+    </section>
+
+    <!-- ============ INVESTMENT CENTER ============ -->
+    <section class="page" id="page-investment">
+      <div class="pagehead"><div><h1 id="investmentTitle">Connection Requests</h1><p id="investmentSubtitle">Loading…</p></div></div>
+      <div id="investmentContent"></div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="page" id="page-settings">
+      <div class="pagehead"><div><h1>Settings</h1><p>Manage your workspace preferences.</p></div></div>
+
+      <div class="card profile-card-light">
+        <div class="profile-avatar-lg" id="profileAvatarLg">–</div>
+        <div style="flex:1;">
+          <div id="profileNameLg" style="font-size:16px; font-weight:700; color:#1A1522;">Loading…</div>
+          <div id="profileRoleLg" style="font-size:12.5px; color:#5C5470; margin-top:2px;"></div>
+          <div style="display:flex; gap:22px; margin-top:12px;">
+            <div class="stat-link" onclick="openSocialModal('following')"><span id="statFollowing" style="font-size:17px; font-weight:700; color:#1A1522;">–</span> <span style="font-size:12px; color:#5C5470;">Following</span></div>
+            <div class="stat-link" onclick="openSocialModal('followers')"><span id="statFollowers" style="font-size:17px; font-weight:700; color:#1A1522;">–</span> <span style="font-size:12px; color:#5C5470;">Followers</span></div>
+          </div>
+          <div style="margin-top:10px; font-size:11.5px; color:#5C5470;" id="profileJoinedLg"></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 6px 20px;">
+        <div class="settings-row"><div><b>Autonomous agent execution</b><p>Allow agents to run pipelines without manual approval at each step</p></div><div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div></div>
+        <div class="settings-row"><div><b>Email notifications</b><p>Get notified when a producer accepts a request</p></div><div class="toggle" id="toggleEmailNotif" onclick="toggleSetting('email_notifications', this)"><div class="knob"></div></div></div>
+        <div class="settings-row"><div><b>Public marketplace profile</b><p>Let producers discover your projects directly</p></div><div class="toggle" id="togglePublicProfile" onclick="toggleSetting('public_profile', this)"><div class="knob"></div></div></div>
+        <div class="settings-row"><div><b>Currency</b><p>Default currency for budgets and offers</p></div><select class="filter-select" id="currencySelect" onchange="saveCurrency(this.value)"><option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="INR">INR (₹)</option></select></div>
+        <div class="settings-row"><div><b>Workspace plan</b><p>Free during development — no billing implemented yet</p></div><button class="btn btn-ghost btn-sm" onclick="alert('Billing isn\'t implemented in this build. All features are free while CineFlow AI is in active development.')">Manage plan</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============ WIZARD MODAL ============ -->
+<div class="modal-overlay" id="wizardOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 style="font-size:17px;">Create New Movie Project</h3>
+      <button class="icon-btn" id="closeWizard">✕</button>
+    </div>
+    <div class="wizard-steps"><div class="st active" id="ws1"></div><div class="st" id="ws2"></div><div class="st" id="ws3"></div></div>
+
+    <div id="wizStep1">
+      <div class="field-row">
+        <div class="field"><label>Movie Title</label><input type="text" id="wizTitleInput" placeholder="Solstice Horizon" value="Solstice Horizon"></div>
+        <div class="field"><label>Genre</label><select><option>Sci-Fi Drama</option><option>Thriller</option><option>Documentary</option><option>Romance</option></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Language</label><select><option>English</option><option>Hindi</option><option>Korean</option><option>Spanish</option></select></div>
+        <div class="field"><label>Country</label><select><option>United States</option><option>India</option><option>South Korea</option><option>Nigeria</option></select></div>
+      </div>
+      <div class="field"><label>Target Audience</label><input type="text" placeholder="Adults 18–45, global streaming"></div>
+      <div class="field"><label>Synopsis</label><textarea id="synopsisInput" placeholder="A stranded orbital engineer discovers her station's AI has been rewriting the crew's memories to survive re-entry...">A stranded orbital engineer discovers her station's AI has been rewriting the crew's memories to survive re-entry.</textarea></div>
+      <div class="field"><label>Screenplay</label><div class="dropzone">📄 Drag & drop your screenplay (.pdf, .fdx) or click to browse</div></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:6px;"><button class="btn btn-primary" data-wiz="2">Continue →</button></div>
+    </div>
+
+    <div id="wizStep2" style="display:none;">
+      <div class="field-row">
+        <div class="field"><label>Expected Budget</label><input type="text" placeholder="$8,400,000" value="$8,400,000"></div>
+        <div class="field"><label>Preferred Investment Amount</label><input type="text" placeholder="$3,000,000" value="$3,000,000"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Preferred Shooting Countries</label><input type="text" id="wizCountriesInput" placeholder="Namibia, India, Iceland" value="Namibia, India, Iceland"></div>
+        <div class="field"><label>Target Release Date</label><input type="date" value="2027-11-05"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:6px;"><button class="btn btn-ghost" data-wiz="1">← Back</button><button class="btn btn-primary" data-wiz="3">Generate Production Plan →</button></div>
+    </div>
+
+    <div id="wizStep3" style="display:none;">
+      <div class="wizard-loading">
+        <div class="spinner-ring"></div>
+        <h3 id="wizLoadingText" style="font-size:15px; margin-bottom:6px;">Dispatching Script Agent…</h3>
+        <p style="font-size:12px; color:var(--text-2);">This usually takes a few seconds. Sit tight.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FOLLOWERS / FOLLOWING MODAL ============ -->
+<div class="modal-overlay" id="socialModalOverlay">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head">
+      <h3 style="font-size:17px;" id="socialModalTitle">Following</h3>
+      <button class="icon-btn" id="closeSocialModal">✕</button>
+    </div>
+    <div id="socialModalBody" style="max-height:60vh; overflow-y:auto;">
+      <p style="color:var(--text-2); font-size:12.5px; padding:20px 0; text-align:center;">Loading…</p>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+/* ============ NAVIGATION ============ */
+const pages = document.querySelectorAll('.page');
+function goToPage(name){
+  pages.forEach(p => p.classList.toggle('active', p.id === 'page-'+name));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === name));
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(name === 'analytics') renderCharts();
+  if(name === 'investment') loadInvestmentPage();
+  if(name === 'marketplace') loadRealProducers();
+  if(name === 'directors') loadRealDirectors();
+  if(name === 'projects') loadRealProjects();
+  if(name === 'dashboard') loadRealDashboard();
+  if(name === 'settings'){ loadSettings(); loadProfileCard(); }
+}
+document.querySelectorAll('[data-page]').forEach(el=>{
+  el.addEventListener('click', (e)=>{ e.preventDefault(); goToPage(el.dataset.page); });
+});
+
+document.getElementById('globalSearch')?.addEventListener('keydown', async (e) => {
+  if(e.key !== 'Enter') return;
+  const query = e.target.value.trim().toLowerCase();
+  if(!query) return;
+
+  const [projectsData, producersData] = await Promise.all([
+    authedFetch('/api/projects'),
+    authedFetch('/api/producers'),
+  ]);
+
+  const matchedProjects = (projectsData?.projects || []).filter(p => p.title.toLowerCase().includes(query));
+  const matchedProducers = (producersData?.producers || []).filter(p =>
+    p.name.toLowerCase().includes(query) || p.company.toLowerCase().includes(query) ||
+    p.genres.some(g => g.toLowerCase().includes(query))
+  );
+
+  if(matchedProjects.length === 0 && matchedProducers.length === 0){
+    alert(`No results for "${e.target.value}".`);
+    return;
+  }
+
+  let msg = `Search results for "${e.target.value}":\n\n`;
+  if(matchedProjects.length) msg += `📁 Projects (${matchedProjects.length}):\n` + matchedProjects.map(p=>`  • ${p.title} (${p.status})`).join('\n') + '\n\n';
+  if(matchedProducers.length) msg += `🌍 Producers (${matchedProducers.length}):\n` + matchedProducers.map(p=>`  • ${p.name} — ${p.company}`).join('\n');
+  alert(msg);
+
+  if(matchedProjects.length && !matchedProducers.length) goToPage('projects');
+  else if(matchedProducers.length && !matchedProjects.length) goToPage('marketplace');
+});
+
+/* ============ AGENT ACCORDIONS + PROGRESS BARS ============ */
+document.querySelectorAll('.progress-fill').forEach(bar=>{
+  const target = bar.dataset.target;
+  requestAnimationFrame(()=> setTimeout(()=> bar.style.width = target+'%', 300));
+});
+document.querySelectorAll('[data-toggle]').forEach(head=>{
+  head.addEventListener('click', ()=>{
+    const body = document.getElementById(head.dataset.toggle);
+    const chev = head.querySelector('.chev');
+    body.classList.toggle('open');
+    chev.classList.toggle('open');
+  });
+});
+
+/* ============ REAL CONNECTION REQUESTS PAGE (role-aware) ============ */
+function statusColor(status){
+  return { pending: "var(--amber)", accepted: "var(--green)", declined: "var(--red)" }[status] || "var(--text-2)";
+}
+
+async function loadInvestmentPage(){
+  const content = document.getElementById('investmentContent');
+  const title = document.getElementById('investmentTitle');
+  const subtitle = document.getElementById('investmentSubtitle');
+  if(!content) return;
+  const user = getStoredUser();
+  if(!user) return;
+
+  if(user.role === 'producer'){
+    title.textContent = 'Incoming Requests';
+    const data = await authedFetch('/api/producers/inbox');
+    if(!data) return;
+    if(data.requests.length === 0){
+      subtitle.textContent = 'No connection requests yet.';
+      content.innerHTML = `<div class="card" style="padding:32px; text-align:center; color:var(--text-2);">Directors will appear here when they request to connect with you. Complete your producer profile in Settings so directors can find you.</div>`;
+      return;
+    }
+    subtitle.textContent = `${data.requests.length} request${data.requests.length===1?'':'s'}.`;
+    content.innerHTML = `<div class="offer-grid">` + data.requests.map(r => `
+      <div class="card offer-card">
+        <div class="offer-top"><b>${r.director_name}</b><span class="status-pill" style="background:${statusColor(r.status)}22; color:${statusColor(r.status)};">${r.status}</span></div>
+        <p style="font-size:11.5px; color:var(--text-2);">${r.director_email} · requested ${liveTimeSpan(r.created_at)}</p>
+        <div class="offer-actions">
+          ${r.status === 'pending' ? `
+            <button class="btn btn-primary btn-sm" onclick="respondToRequest('${r.id}','accepted',this,'${r.director_name.replace(/'/g,"\\'")}')">Accept</button>
+            <button class="btn btn-ghost btn-sm" onclick="respondToRequest('${r.id}','declined',this,'${r.director_name.replace(/'/g,"\\'")}')">Decline</button>
+          ` : r.status === 'accepted' ? `
+            <button class="btn btn-primary btn-sm" style="flex:1;" onclick="openChatThread('${r.id}','${r.director_name.replace(/'/g,"\\'")}')">💬 Message</button>
+          ` : `<button class="btn btn-ghost btn-sm" style="flex:1;" disabled>Declined</button>`}
+        </div>
+      </div>`).join('') + `</div>`;
+  } else {
+    title.textContent = 'Connection Requests';
+    const data = await authedFetch('/api/producers/connections');
+    if(!data) return;
+    if(data.connections.length === 0){
+      subtitle.textContent = 'No requests sent yet.';
+      content.innerHTML = `<div class="card" style="padding:32px; text-align:center; color:var(--text-2);">Visit the <a href="#" data-page="marketplace" style="color:var(--pink);">Producer Marketplace</a> and click Connect on a producer to send your first request.</div>`;
+      return;
+    }
+    subtitle.textContent = `${data.connections.length} request${data.connections.length===1?'':'s'} sent.`;
+    content.innerHTML = `<div class="offer-grid">` + data.connections.map(c => `
+      <div class="card offer-card">
+        <div class="offer-top"><b>${c.producer_name}</b><span class="status-pill" style="background:${statusColor(c.status)}22; color:${statusColor(c.status)};">${c.status}</span></div>
+        <p style="font-size:11.5px; color:var(--text-2);">${c.producer_company} · sent ${liveTimeSpan(c.created_at)}</p>
+        <div class="offer-actions">
+          ${c.status === 'accepted' ? `
+            <button class="btn btn-primary btn-sm" style="flex:1;" onclick="openChatThread('${c.id}','${c.producer_name.replace(/'/g,"\\'")}')">💬 Message</button>
+          ` : `<button class="btn btn-ghost btn-sm" style="flex:1;" onclick="alert('${c.producer_name.replace(/'/g,"\\'")}\\n${c.producer_company.replace(/'/g,"\\'")}\\n\\nStatus: ${c.status}\\nSent ${timeAgo(c.created_at)}')">View</button>`}
+        </div>
+      </div>`).join('') + `</div>`;
+  }
+}
+
+/* ============ REAL CHAT (backed by /api/messages, gated on accepted connections) ============ */
+let currentChatConnectionId = null;
+let chatPollInterval = null;
+
+async function openChatThread(connectionId, partnerName){
+  currentChatConnectionId = connectionId;
+  document.getElementById('chatPartnerName').textContent = partnerName;
+  document.getElementById('chatOverlay').style.display = 'flex';
+  document.getElementById('chatInput').value = '';
+  await loadChatMessages();
+  clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(loadChatMessages, 5000); // real-time-ish via polling
+}
+
+function closeChatThread(){
+  document.getElementById('chatOverlay').style.display = 'none';
+  currentChatConnectionId = null;
+  clearInterval(chatPollInterval);
+}
+
+async function loadChatMessages(){
+  if(!currentChatConnectionId) return;
+  const data = await authedFetch(`/api/messages/${currentChatConnectionId}`);
+  if(!data) return;
+  const container = document.getElementById('chatMessages');
+  if(data.messages.length === 0){
+    container.innerHTML = `<div style="text-align:center; color:var(--text-2); font-size:12.5px; margin-top:20px;">No messages yet — say hello.</div>`;
+    return;
+  }
+  container.innerHTML = data.messages.map(m => `
+    <div style="align-self:${m.is_mine ? 'flex-end' : 'flex-start'}; max-width:75%;">
+      <div style="background:${m.is_mine ? 'var(--grad-primary)' : 'var(--bg-2)'}; color:${m.is_mine ? 'white' : 'var(--text-0)'}; padding:9px 13px; border-radius:14px; font-size:13px; word-wrap:break-word;">${m.body.replace(/</g,'&lt;')}</div>
+      <div style="font-size:10px; color:var(--text-2); margin-top:3px; text-align:${m.is_mine ? 'right' : 'left'};">${timeAgo(m.created_at)}</div>
+    </div>`).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChatMessage(){
+  const input = document.getElementById('chatInput');
+  const body = input.value.trim();
+  if(!body || !currentChatConnectionId) return;
+  const token = getToken();
+  input.value = '';
+  try {
+    const res = await fetch(`${API_BASE}/api/messages/${currentChatConnectionId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ body })
+    });
+    if(!res.ok){
+      const err = await res.json();
+      alert(err.detail || 'Could not send message.');
+      return;
+    }
+    await loadChatMessages();
+  } catch (err) {
+    alert('Could not reach the backend.');
+  }
+}
+
+async function respondToRequest(connectionId, decision, btnEl, directorName){
+  const token = getToken();
+  btnEl.closest('.offer-actions').querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    const res = await fetch(`${API_BASE}/api/producers/connections/${connectionId}/respond?decision=${decision}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!res.ok){ alert('Could not respond to this request.'); return; }
+    if(decision === 'accepted'){
+      alert(`✅ You accepted ${directorName}'s request!\n\nThey've been notified and can now see you accepted.`);
+    } else {
+      alert(`You declined ${directorName}'s request.`);
+    }
+    loadInvestmentPage();
+    loadRealActivity();
+  } catch (err) {
+    alert('Could not reach the backend.');
+  }
+}
+
+/* ============ REAL PRODUCER MARKETPLACE (fetched from /api/producers) ============ */
+const grid = document.getElementById('prodGrid');
+const avatarGrads = [
+  "linear-gradient(135deg,#9B5CF6,#4C8BE0)", "linear-gradient(135deg,#F2569E,#C97A3D)",
+  "linear-gradient(135deg,#7FA84A,#4CAF6D)", "linear-gradient(135deg,#4C8BE0,#9B5CF6)",
+  "linear-gradient(135deg,#F2569E,#9B5CF6)", "linear-gradient(135deg,#7FA84A,#4C8BE0)",
+];
+function fmtMoney(n){
+  if(n >= 1_000_000) return `$${(n/1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  return `$${Math.round(n/1000)}K`;
+}
+function initials(name){ return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+async function loadFilterOptions(){
+  const data = await authedFetch('/api/producers/filters');
+  if(!data) return;
+  const fill = (id, values) => {
+    const sel = document.getElementById(id);
+    values.forEach(v => sel.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
+  };
+  fill('filterCountry', data.countries);
+  fill('filterGenre', data.genres);
+  fill('filterLanguage', data.languages);
+}
+
+async function loadRealProducers(){
+  if(!grid) return;
+  const country = document.getElementById('filterCountry')?.value || 'all';
+  const genre = document.getElementById('filterGenre')?.value || 'all';
+  const language = document.getElementById('filterLanguage')?.value || 'all';
+  const budget = document.getElementById('filterBudget')?.value || 'all';
+
+  const params = new URLSearchParams();
+  if(country !== 'all') params.set('country', country);
+  if(genre !== 'all') params.set('genre', genre);
+  if(language !== 'all') params.set('language', language);
+  if(budget !== 'all'){
+    const [min, max] = budget.split('-');
+    params.set('min_budget', min);
+    params.set('max_budget', max);
+  }
+
+  const data = await authedFetch(`/api/producers?${params.toString()}`);
+  if(!data) return;
+
+  const subtitle = document.getElementById('marketplaceSubtitle');
+  if(subtitle){
+    subtitle.textContent = `${data.producers.length} of ${data.total_in_directory} producers match your filters.`;
+  }
+
+  if(data.producers.length === 0){
+    grid.innerHTML = `<div class="card" style="padding:32px; text-align:center; grid-column:1/-1; color:var(--text-2);">No producers match these filters. Try widening your search.</div>`;
+    return;
+  }
+
+  grid.innerHTML = data.producers.map((p, i) => {
+    const rating = parseFloat(p.rating);
+    const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5-Math.round(rating));
+    const alreadyRequested = p.connection_status === 'requested';
+    return `
+    <div class="card prod-card">
+      <div class="ph-row">
+        <div class="prod-avatar" style="background:${avatarGrads[i % avatarGrads.length]};">${initials(p.name)}</div>
+        <div><div class="name">${p.name}</div><div class="co">${p.company}</div><div class="country">📍 ${p.country}</div></div>
+      </div>
+      <div class="prod-stats-row">
+        <div><div class="v">${p.films_produced}</div><div class="l">Films</div></div>
+        <div><div class="v">${p.success_rate_pct}%</div><div class="l">Success</div></div>
+        <div><div class="v">${p.avg_roi_x}</div><div class="l">Avg ROI</div></div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text-2);">Investment capacity <b style="color:var(--text-0);">${fmtMoney(p.investment_min)}–${fmtMoney(p.investment_max)}</b></div>
+      <div class="prod-tags">${p.genres.map(g=>`<span class="tag">${g}</span>`).join('')}</div>
+      <div class="stars">${stars} <span style="color:var(--text-2); font-family:'Inter';">(${p.rating})</span></div>
+      <div class="follow-row">
+        <button class="btn-follow ${p.is_following ? 'following' : 'follow-active'}" onclick="toggleFollow('producer','${p.id}', this, '${p.name.replace(/'/g,"\\'")}')">
+          ${p.is_following ? '✓ Following' : '+ Follow'}
+        </button>
+        <span class="follower-count" id="followerCount-producer-${p.id}">${p.followers_count} follower${p.followers_count===1?'':'s'}</span>
+      </div>
+      <div class="prod-actions">
+        <button class="btn ${alreadyRequested ? 'btn-ghost' : 'btn-primary'} btn-sm" ${alreadyRequested ? 'disabled' : ''} onclick="connectProducer('${p.id}', this)">
+          ${alreadyRequested ? '⏳ Pending' : 'Connect'}
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick='showProducerDetails(${JSON.stringify(p).replace(/'/g, "&apos;")})'>View Details</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showProducerDetails(p){
+  alert(
+`${p.name} — ${p.company}
+📍 ${p.country}
+
+Films produced: ${p.films_produced}
+Success rate: ${p.success_rate_pct}%
+Average ROI: ${p.avg_roi_x}
+Rating: ${p.rating}/5
+
+Investment capacity: ${fmtMoney(p.investment_min)}–${fmtMoney(p.investment_max)}
+Genres: ${p.genres.join(', ')}
+Languages: ${p.languages.join(', ')}
+${p.connection_status ? '\nYou already requested a connection with this producer.' : ''}`
+  );
+}
+
+async function connectProducer(producerId, btnEl){
+  btnEl.disabled = true;
+  btnEl.textContent = 'Sending…';
+  const token = getToken();
+  try {
+    const res = await fetch(`${API_BASE}/api/producers/${producerId}/connect`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(res.status === 401){ window.location.href = 'login.html'; return; }
+    if(!res.ok){
+      const err = await res.json();
+      alert(err.detail || 'Could not send connection request.');
+      btnEl.disabled = false;
+      btnEl.textContent = 'Connect';
+      return;
+    }
+    btnEl.textContent = '⏳ Pending';
+    btnEl.classList.remove('btn-primary');
+    btnEl.classList.add('btn-ghost');
+    loadRealActivity(); // real request just happened, refresh the feed immediately
+  } catch (err) {
+    alert('Could not reach the backend.');
+    btnEl.disabled = false;
+    btnEl.textContent = 'Connect';
+  }
+}
+
+['filterCountry','filterGenre','filterLanguage','filterBudget'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', loadRealProducers);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadFilterOptions();
+  loadRealProducers();
+});
+
+/* ============ DIRECTORS WORKPLACE (real accounts, role='director') ============ */
+const dirGrid = document.getElementById('dirGrid');
+
+async function loadRealDirectors(){
+  if(!dirGrid) return;
+  const data = await authedFetch('/api/directors');
+  if(!data) return;
+
+  const subtitle = document.getElementById('directorsSubtitle');
+  if(subtitle) subtitle.textContent = `${data.total} director${data.total===1?'':'s'} in the workplace.`;
+
+  if(data.directors.length === 0){
+    dirGrid.innerHTML = `<div class="card" style="padding:32px; text-align:center; grid-column:1/-1; color:var(--text-2);">No other directors have joined yet. Once someone registers as a director, they'll show up here automatically.</div>`;
+    return;
+  }
+
+  dirGrid.innerHTML = data.directors.map((d, i) => `
+    <div class="card prod-card">
+      <div class="ph-row">
+        <div class="prod-avatar" style="background:${avatarGrads[i % avatarGrads.length]};">${initials(d.name)}</div>
+        <div><div class="name">${d.name}</div><div class="co">🎥 Director</div><div class="country">Joined ${liveTimeSpan(d.joined_at)}</div></div>
+      </div>
+      <div class="prod-stats-row">
+        <div><div class="v">${d.project_count}</div><div class="l">Projects</div></div>
+        <div><div class="v">${d.followers_count}</div><div class="l">Followers</div></div>
+      </div>
+      <div class="follow-row">
+        <button class="btn-follow ${d.is_following ? 'following' : 'follow-active'}" onclick="toggleFollow('user','${d.id}', this, '${d.name.replace(/'/g,"\\'")}')">
+          ${d.is_following ? '✓ Following' : '+ Follow'}
+        </button>
+        <span class="follower-count" id="followerCount-user-${d.id}">${d.email ? d.email : 'Private profile'}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ============ FOLLOW / UNFOLLOW (shared by producers + directors) ============ */
+async function toggleFollow(type, id, btnEl, name){
+  const token = getToken();
+  if(!token){ window.location.href = 'login.html'; return; }
+  const isFollowing = btnEl.classList.contains('following');
+  btnEl.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/social/${isFollowing ? 'unfollow' : 'follow'}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ followee_type: type, followee_id: id })
+    });
+    if(res.status === 401){ window.location.href = 'login.html'; return; }
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      alert(err.detail || 'Could not update follow status.');
+      btnEl.disabled = false;
+      return;
+    }
+
+    btnEl.classList.toggle('following', !isFollowing);
+    btnEl.classList.toggle('follow-active', isFollowing);
+    btnEl.textContent = isFollowing ? '+ Follow' : '✓ Following';
+    btnEl.disabled = false;
+
+    const countEl = document.getElementById(`followerCount-${type}-${id}`);
+    if(countEl && type === 'producer'){
+      const current = parseInt(countEl.textContent) || 0;
+      const next = isFollowing ? Math.max(0, current - 1) : current + 1;
+      countEl.textContent = `${next} follower${next===1?'':'s'}`;
+    }
+
+    loadRealActivity(); // a real follow/unfollow just happened — refresh the feed
+  } catch (err) {
+    alert('Could not reach the backend.');
+    btnEl.disabled = false;
+  }
+}
+
+/* ============ FOLLOWERS / FOLLOWING MODAL (Instagram-style) ============ */
+const socialOverlay = document.getElementById('socialModalOverlay');
+document.getElementById('closeSocialModal').addEventListener('click', ()=> socialOverlay.classList.remove('open'));
+socialOverlay.addEventListener('click', e=>{ if(e.target===socialOverlay) socialOverlay.classList.remove('open'); });
+
+async function openSocialModal(kind){
+  socialOverlay.classList.add('open');
+  document.getElementById('socialModalTitle').textContent = kind === 'followers' ? 'Followers' : 'Following';
+  const body = document.getElementById('socialModalBody');
+  body.innerHTML = `<p style="color:var(--text-2); font-size:12.5px; padding:20px 0; text-align:center;">Loading…</p>`;
+
+  const data = await authedFetch(`/api/social/${kind}`);
+  if(!data) return;
+  const list = data[kind] || [];
+
+  if(list.length === 0){
+    body.innerHTML = `<p style="color:var(--text-2); font-size:12.5px; padding:20px 0; text-align:center;">
+      ${kind === 'followers' ? "No one follows you yet." : "You're not following anyone yet — visit the Producer Marketplace or Directors Workplace to follow someone."}
+    </p>`;
+    return;
+  }
+
+  body.innerHTML = list.map(p => `
+    <div class="social-row">
+      <div class="social-avatar">${initials(p.name)}</div>
+      <div class="info"><b>${p.name}</b><span>${p.subtitle || p.role} · ${kind === 'followers' ? 'followed you' : 'followed'} ${liveTimeSpan(p.followed_at)}</span></div>
+    </div>`).join('');
+}
+
+/* ============ EXACT TIMESTAMPS (not relative "X ago") ============ */
+// liveTimeSpan renders the exact moment something happened, e.g. "12:10 AM"
+// for something that happened today, or "Aug 19, 11:58 PM" for earlier —
+// never a relative "5 hours ago" string.
+function liveTimeSpan(iso){
+  if(!iso) return '';
+  const d = parseUTC(iso);
+  if(!d) return '';
+  const fullAbs = d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  return `<span class="time-live" data-ts="${iso}" title="${fullAbs}">${timeAgo(iso)}</span>`;
+}
+
+/* ============ REAL AI STUDIO (driven entirely by live SSE events) ============ */
+const AGENT_META = {
+  coordinator:            { title: "Gemini Coordinator", icon: "🧭", color: "rgba(155,92,246,0.18)" },
+  script_agent:           { title: "Script Agent",           icon: "🎭", color: "rgba(155,92,246,0.18)" },
+  budget_agent:           { title: "Budget Agent",            icon: "💰", color: "rgba(224,184,76,0.18)" },
+  producer_match_agent:   { title: "Producer Match Agent",    icon: "🌍", color: "rgba(127,168,74,0.18)" },
+  scheduling_agent:       { title: "Scheduling Agent",        icon: "📅", color: "rgba(76,139,224,0.18)" },
+  risk_agent:             { title: "Risk Agent",              icon: "⚠",  color: "rgba(239,95,107,0.18)" },
+  analytics_agent:        { title: "Analytics Agent",         icon: "📊", color: "rgba(242,86,158,0.18)" },
+};
+const AGENT_ORDER = ["coordinator","script_agent","budget_agent","producer_match_agent","scheduling_agent","risk_agent","analytics_agent"];
+
+let studioState = {}; // agent_name -> {status, message, payload}
+
+async function populateStudioProjectSelect(){
+  const sel = document.getElementById('studioProjectSelect');
+  if(!sel) return;
+  const data = await authedFetch('/api/projects');
+  if(!data) return;
+  if(data.projects.length === 0){
+    sel.innerHTML = `<option value="">No projects yet — create one first</option>`;
+    return;
+  }
+  sel.innerHTML = data.projects.map(p => `<option value="${p.project_id}">${p.title} (${p.status})</option>`).join('');
+}
+
+function statusPillClass(status){
+  return { running: "running", completed: "done", failed: "failed", skipped: "queued" }[status] || "queued";
+}
+function statusPillLabel(status){
+  return { running: "Running", completed: "Done", failed: "Failed", skipped: "Not Implemented" }[status] || "Pending";
+}
+
+function renderStudioPipeline(){
+  const rail = document.getElementById('pipelineRail');
+  if(!rail) return;
+
+  rail.innerHTML = AGENT_ORDER.map(name => {
+    const meta = AGENT_META[name];
+    const s = studioState[name];
+    const status = s?.status || "pending";
+    const message = s?.message || "Waiting to start…";
+    const nodeClass = status === "completed" ? "done" : status === "failed" ? "failed" : "";
+
+    let body = `<p style="font-size:12.5px; color:var(--text-2);">${message}</p>`;
+
+    if(name === "script_agent" && status === "completed" && s.payload){
+      const p = s.payload;
+      body = `
+        <div class="mini-grid">
+          <div class="mini-stat"><div class="l">Genre</div><div class="v">${p.genre}${p.subgenre ? ' · ' + p.subgenre : ''}</div></div>
+          <div class="mini-stat"><div class="l">Characters</div><div class="v">${p.characters.length}</div></div>
+          <div class="mini-stat"><div class="l">Locations</div><div class="v">${p.locations.length}</div></div>
+          <div class="mini-stat"><div class="l">Props</div><div class="v">${p.props.length}</div></div>
+          <div class="mini-stat"><div class="l">Scene Count</div><div class="v">${p.scene_count}</div></div>
+          <div class="mini-stat"><div class="l">Est. Runtime</div><div class="v">${p.estimated_runtime_minutes} min</div></div>
+        </div>
+        <div style="margin-top:14px;">${p.locations.map(l=>`<span class="tag">${l}</span>`).join('')}</div>
+        <p style="margin-top:10px; font-size:12px; color:var(--text-2);"><b style="color:var(--text-0);">Logline:</b> ${p.logline}</p>
+      `;
+    } else if(name === "coordinator" && status === "completed" && s.payload){
+      body = `
+        <p style="font-size:12.5px; color:var(--text-1); margin-bottom:10px;">${s.payload.notes || 'Execution plan generated.'}</p>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          ${(s.payload.steps || []).map(step => `<span class="tag">${AGENT_META[step.name]?.title || step.name}</span>`).join('')}
+        </div>
+      `;
+    } else if(name === "budget_agent" && status === "completed" && s.payload){
+      const b = s.payload;
+      const barColors = ["var(--violet)","var(--cyan)","var(--teal)","var(--pink)","var(--amber)","var(--orange)","var(--green)"];
+      const maxAmt = Math.max(...b.line_items.map(li => li.amount));
+      body = `
+        <div class="budget-bars">
+          ${b.line_items.map((li, idx) => `
+            <div class="budget-row">
+              <span class="lbl">${li.category.replace('_',' ')}</span>
+              <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(li.amount/maxAmt*100)}%; background:${barColors[idx % barColors.length]};"></div></div>
+              <span class="amt">$${(li.amount/1_000_000).toFixed(1)}M</span>
+            </div>`).join('')}
+        </div>
+        <div class="total-budget"><span style="color:var(--text-2); font-size:12.5px;">Expected Budget (AI estimate)</span><span class="v">$${(b.expected_budget/1_000_000).toFixed(1)}M</span></div>
+        <p style="margin-top:8px; font-size:11px; color:var(--text-2);">${b.assumptions}</p>
+      `;
+    } else if(status === "skipped"){
+      body = `<p style="font-size:12.5px; color:var(--text-2);">${message} — this is an honest status, not a placeholder animation. See the project README roadmap for build status.</p>`;
+    }
+
+    return `
+    <div class="agent-card card">
+      <div class="agent-node ${nodeClass}"><div class="core"></div></div>
+      <div class="head">
+        <div class="head-left">
+          <div class="agent-avatar" style="background:${meta.color};">${meta.icon}</div>
+          <div><div class="agent-title">${meta.title}</div><div class="agent-status">${status === 'completed' ? message : (status === 'running' ? message : (status === 'skipped' ? 'Not yet implemented' : 'Pending'))} <span class="status-pill ${statusPillClass(status)}">${statusPillLabel(status)}</span></div></div>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${status==='completed'?100:status==='running'?50:0}%;"></div></div>
+      <div class="agent-body open">${body}</div>
+    </div>`;
+  }).join('');
+
+  const doneCount = Object.values(studioState).filter(s => s.status === 'completed').length;
+  const pill = document.getElementById('studioStatusPill');
+  if(pill) pill.textContent = doneCount > 0 ? `${doneCount} agent${doneCount===1?'':'s'} complete` : 'Idle';
+}
+
+async function runStudioAnalysis(){
+  const sel = document.getElementById('studioProjectSelect');
+  const projectId = sel?.value;
+  const token = getToken();
+  if(!token){ window.location.href = 'login.html'; return; }
+  if(!projectId){ alert('Select a project first.'); return; }
+
+  const btn = document.getElementById('studioRunBtn');
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+
+  studioState = {};
+  renderStudioPipeline();
+  document.getElementById('studioSubtitle').textContent = 'Live agent pipeline — real Gemini calls in progress.';
+
+  const source = new EventSource(`${API_BASE}/api/projects/${projectId}/stream?token=${encodeURIComponent(token)}`);
+
+  source.addEventListener('agent_update', (e) => {
+    const data = JSON.parse(e.data);
+    if(data.agent_name === 'pipeline'){
+      if(data.status === 'completed'){
+        source.close();
+        btn.disabled = false;
+        btn.textContent = '▶ Run Real Analysis';
+        loadRealDashboard();
+        loadRealProjects();
+      }
+      return;
+    }
+    studioState[data.agent_name] = { status: data.status, message: data.message, payload: data.payload };
+    renderStudioPipeline();
+  });
+
+  source.onerror = () => {
+    source.close();
+    btn.disabled = false;
+    btn.textContent = '▶ Run Real Analysis';
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  populateStudioProjectSelect();
+  renderStudioPipeline();
+});
+const pg = document.getElementById('projGrid');
+const statusChipStyle = s => ({
+  draft: "background:rgba(148,139,174,0.18);color:var(--text-1)",
+  analyzing: "background:rgba(224,184,76,0.18);color:var(--amber)",
+  completed: "background:rgba(76,175,109,0.18);color:var(--green)",
+  failed: "background:rgba(239,95,107,0.18);color:var(--red)",
+}[s] || "background:rgba(155,92,246,0.18);color:var(--violet)");
+
+const posterGradients = [
+  "linear-gradient(135deg,#9B5CF6,#4C8BE0)",
+  "linear-gradient(135deg,#F2569E,#C97A3D)",
+  "linear-gradient(135deg,#7FA84A,#4CAF6D)",
+  "linear-gradient(135deg,#4C8BE0,#9B5CF6)",
+];
+
+async function loadRealProjects(){
+  if(!pg) return;
+  const data = await authedFetch('/api/projects');
+  if(!data) return;
+
+  if(data.projects.length === 0){
+    pg.innerHTML = `
+      <div class="card" style="padding:40px; text-align:center; grid-column:1/-1;">
+        <div style="font-size:15px; font-weight:600; margin-bottom:6px;">No projects yet</div>
+        <div style="color:var(--text-2); font-size:13px; margin-bottom:18px;">Create your first movie project to see it here — nothing shown is demo data.</div>
+        <button class="btn btn-primary" onclick="openWizard()">+ New Project</button>
+      </div>`;
+    return;
+  }
+
+  pg.innerHTML = data.projects.map((p, i) => `
+    <div class="card proj-card">
+      <div class="proj-poster" style="background:${posterGradients[i % posterGradients.length]};"><span>${p.title}</span></div>
+      <div class="proj-body">
+        <span class="status-chip" style="${statusChipStyle(p.status)}">${p.status}</span>
+        <div class="proj-meta">${p.input_mode === 'screenplay' ? 'Screenplay' : 'Idea'} · Created ${new Date(p.created_at).toLocaleDateString()}</div>
+      </div>
+    </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadRealProjects);
+
+/* ============ HEATMAP ============ */
+const hm = document.getElementById('heatmap');
+const heatVals = [12,45,78,34,20, 60,15,90,25,50, 33,70,10,55,42];
+heatVals.forEach(v=>{
+  const color = v>66 ? '#F87171' : v>33 ? '#FBBF24' : '#34D399';
+  hm.innerHTML += `<div style="height:34px; border-radius:7px; background:${color}; opacity:${0.35+v/150};"></div>`;
+});
+
+/* ============ CHARTS ============ */
+let chartsRendered = false;
+function renderCharts(){
+  if(chartsRendered) return;
+  if(typeof Chart === 'undefined'){
+    console.warn('Chart.js failed to load — analytics charts will be skipped, but the rest of the app still works.');
+    return;
+  }
+  chartsRendered = true;
+  Chart.defaults.color = '#8A93B8';
+  Chart.defaults.font.family = "Inter";
+
+  new Chart(document.getElementById('chartBudget'), {
+    type:'doughnut',
+    data:{ labels:['Cast','Crew','Equipment','Marketing','Travel'],
+      datasets:[{ data:[2.7,2.0,1.5,1.2,1.0], backgroundColor:['#8B5CF6','#22D3EE','#2DD4BF','#F472B6','#FB923C'], borderWidth:0 }]},
+    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:14, font:{size:11}}}}, cutout:'62%' }
+  });
+
+  new Chart(document.getElementById('chartDept'), {
+    type:'bar',
+    data:{ labels:['Camera','Sound','Lighting','Art Dept','VFX','Wardrobe'],
+      datasets:[{ data:[420,180,260,340,610,150], backgroundColor:'#8B5CF6', borderRadius:6 }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(150,163,255,0.08)'}} } }
+  });
+
+  new Chart(document.getElementById('chartProgress'), {
+    type:'line',
+    data:{ labels:['W1','W6','W12','W18','W24','W30','W36','W42'],
+      datasets:[{ data:[2,14,30,45,58,74,88,100], borderColor:'#2DD4BF', backgroundColor:'rgba(45,212,191,0.12)', fill:true, tension:0.4, pointRadius:3 }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(150,163,255,0.08)'}} } }
+  });
+}
+
+/* ============ WIZARD MODAL ============ */
+const overlay = document.getElementById('wizardOverlay');
+function openWizard(){ overlay.classList.add('open'); goWizStep(1); }
+['openWizardBtn','openWizardBtn2','openWizardBtn3'].forEach(id=>{
+  document.getElementById(id).addEventListener('click', openWizard);
+});
+document.getElementById('closeWizard').addEventListener('click', ()=> overlay.classList.remove('open'));
+overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open'); });
+
+function goWizStep(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('wizStep'+i).style.display = i===n ? 'block':'none';
+    document.getElementById('ws'+i).classList.toggle('active', i<=n);
+  });
+  if(n===3) runRealPipeline();
+}
+document.querySelectorAll('[data-wiz]').forEach(btn=>{
+  btn.addEventListener('click', ()=> goWizStep(parseInt(btn.dataset.wiz)));
+});
+
+const API_BASE = window.API_BASE;
+
+async function runRealPipeline(){
+  const el = document.getElementById('wizLoadingText');
+  const synopsis = document.getElementById('synopsisInput').value.trim();
+  const title = document.getElementById('wizTitleInput').value.trim();
+  const countryContext = document.getElementById('wizCountriesInput').value.trim();
+  const token = getToken();
+
+  if(!token){
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if(!synopsis){
+    el.textContent = "Please enter a synopsis before generating a plan.";
+    return;
+  }
+
+  el.textContent = "Creating project…";
+  let projectId;
+  try {
+    const createRes = await fetch(`${API_BASE}/api/projects`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        title: title || undefined,
+        input_mode: "idea",
+        raw_text: synopsis,
+        country_context: countryContext || undefined
+      })
+    });
+    if(createRes.status === 401){ window.location.href = 'login.html'; return; }
+    if(!createRes.ok) throw new Error(`Create failed: ${createRes.status}`);
+    projectId = (await createRes.json()).project_id;
+    loadRealDashboard();
+    loadRealProjects();
+  } catch (err) {
+    el.textContent = "Could not reach the backend. Is uvicorn running on :8000?";
+    console.error(err);
+    return;
+  }
+
+  el.textContent = "Connecting to Gemini Coordinator…";
+  studioState = {};
+  const source = new EventSource(`${API_BASE}/api/projects/${projectId}/stream?token=${encodeURIComponent(token)}`);
+
+  source.addEventListener('agent_update', (e) => {
+    const data = JSON.parse(e.data);
+    console.log('agent_update', data);
+    el.textContent = data.message;
+
+    if(data.agent_name !== 'pipeline'){
+      studioState[data.agent_name] = { status: data.status, message: data.message, payload: data.payload };
+    }
+    if (data.status === 'failed') {
+      source.close();
+      el.textContent = `Error: ${data.message}`;
+      return;
+    }
+    if (data.agent_name === 'pipeline' && data.status === 'completed') {
+      source.close();
+      overlay.classList.remove('open');
+      goToPage('studio');
+      renderStudioPipeline();
+      loadRealDashboard();
+      loadRealProjects();
+    }
+  });
+
+  source.onerror = (err) => {
+    console.error('SSE connection error', err);
+    source.close();
+  };
+}
+
+/* ============ REAL SETTINGS (saved to the database, not decorative) ============ */
+async function loadProfileCard(){
+  const user = getStoredUser();
+  if(!user) return;
+  document.getElementById('profileNameLg').textContent = user.full_name;
+  document.getElementById('profileRoleLg').textContent = user.role === 'producer' ? '💼 Producer' : '🎥 Director';
+  document.getElementById('profileAvatarLg').textContent = user.full_name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+  const stats = await authedFetch('/api/producers/profile-stats');
+  if(stats){
+    document.getElementById('statFollowing').textContent = stats.following;
+    document.getElementById('statFollowers').textContent = stats.followers;
+  }
+
+  const me = await authedFetch('/api/auth/me');
+  const joinedEl = document.getElementById('profileJoinedLg');
+  if(me && me.created_at && joinedEl){
+    joinedEl.innerHTML = `Joined ${liveTimeSpan(me.created_at)}`;
+  }
+}
+
+async function loadSettings(){
+  const data = await authedFetch('/api/auth/me');
+  if(!data) return;
+  document.getElementById('toggleEmailNotif')?.classList.toggle('on', data.email_notifications);
+  document.getElementById('togglePublicProfile')?.classList.toggle('on', data.public_profile);
+  const sel = document.getElementById('currencySelect');
+  if(sel) sel.value = data.currency;
+}
+
+async function toggleSetting(field, el){
+  const newValue = !el.classList.contains('on');
+  el.classList.toggle('on', newValue);
+  const token = getToken();
+  try {
+    await fetch(`${API_BASE}/api/auth/settings`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ [field]: newValue })
+    });
+  } catch (err) {
+    el.classList.toggle('on', !newValue); // revert on failure
+    alert('Could not save — check your connection.');
+  }
+}
+
+async function saveCurrency(value){
+  const token = getToken();
+  await fetch(`${API_BASE}/api/auth/settings`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ currency: value })
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadSettings);
+document.addEventListener('DOMContentLoaded', loadProfileCard);
+
+/* Real notifications — pulls from the actual activity feed, not a canned list */
+document.getElementById('notifBtn').addEventListener('click', async ()=>{
+  const data = await authedFetch('/api/activity?limit=5');
+  if(!data || data.events.length === 0){
+    alert('🔔 No notifications yet.\n\nCreate a project or connect with a producer to see activity here.');
+    return;
+  }
+  const lines = data.events.map(e => `${e.title} — ${timeAgo(e.created_at)}`).join('\n');
+  alert(`🔔 Recent Activity\n\n${lines}`);
+});
+
+/* ============ REAL AUTH GUARD + LIVE DASHBOARD DATA ============ */
+function getToken(){ return localStorage.getItem('cineflow_token'); }
+function getStoredUser(){
+  try { return JSON.parse(localStorage.getItem('cineflow_user') || 'null'); }
+  catch { return null; }
+}
+function logout(){
+  localStorage.removeItem('cineflow_token');
+  localStorage.removeItem('cineflow_user');
+  window.location.href = 'login.html';
+}
+
+async function authedFetch(path){
+  const token = getToken();
+  if(!token){ window.location.href = 'login.html'; return null; }
+  const res = await fetch(`${API_BASE}${path}`, { headers: { "Authorization": `Bearer ${token}` } });
+  if(res.status === 401){ logout(); return null; }
+  if(!res.ok) return null;
+  return res.json();
+}
+
+// The backend always writes UTC timestamps (Python's datetime.utcnow()),
+// but its isoformat() output has no "Z"/offset suffix — so new Date(iso)
+// would otherwise be parsed as *local* time and come out hours off
+// (this was the "shows 5 hours ago for everything" bug). parseUTC fixes
+// that by tagging any timezone-less ISO string as UTC before parsing.
+function parseUTC(isoString){
+  if(!isoString) return null;
+  const hasTz = /Z$|[+-]\d{2}:\d{2}$/.test(isoString);
+  return new Date(hasTz ? isoString : isoString + 'Z');
+}
+
+// Shows the exact clock time something happened at (in the viewer's local
+// timezone) rather than a relative "X ago" string — e.g. "12:10 AM" for
+// something that happened today, or "Aug 19, 11:58 PM" for an earlier day.
+function timeAgo(isoString){
+  const d = parseUTC(isoString);
+  if(!d) return '';
+  const now = new Date();
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  if(d.toDateString() === now.toDateString()) return time;
+  const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `${date}, ${time}`;
+}
+
+const activityIcons = {
+  account_created: ["🎬", "rgba(155,92,246,0.15)", "var(--violet)"],
+  project_created: ["📁", "rgba(76,139,224,0.15)", "var(--teal)"],
+  analysis_started: ["⚙️", "rgba(224,184,76,0.15)", "var(--amber)"],
+  agent_completed: ["✓", "rgba(76,175,109,0.15)", "var(--green)"],
+  agent_failed: ["⚠", "rgba(239,95,107,0.15)", "var(--red)"],
+  pipeline_completed: ["🎬", "rgba(242,86,158,0.15)", "var(--pink)"],
+  started_following: ["👥", "rgba(155,92,246,0.15)", "var(--violet)"],
+  producer_connection_requested: ["🤝", "rgba(76,139,224,0.15)", "var(--teal)"],
+  producer_connection_responded: ["✓", "rgba(76,175,109,0.15)", "var(--green)"],
+};
+
+async function loadRealActivity(){
+  const feed = document.getElementById('activityFeed');
+  if(!feed) return;
+  const data = await authedFetch('/api/activity?limit=10');
+  if(!data) return;
+
+  if(data.events.length === 0){
+    feed.innerHTML = `<div class="activity-item"><div class="txt"><p style="color:var(--text-2);">No activity yet — create your first project to get started.</p></div></div>`;
+    return;
+  }
+
+  feed.innerHTML = data.events.map(e => {
+    const [icon, bg, color] = activityIcons[e.event_type] || ["•", "rgba(148,139,174,0.15)", "var(--text-1)"];
+    return `
+    <div class="activity-item">
+      <div class="activity-ic" style="background:${bg}; color:${color};">${icon}</div>
+      <div class="txt"><b>${e.title}</b><p>${e.description}</p></div>
+      <div class="time">${liveTimeSpan(e.created_at)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadRealDashboard(){
+  const token = getToken();
+  if(!token){ window.location.href = 'login.html'; return; }
+
+  const user = getStoredUser();
+  if(user){
+    document.getElementById('welcomeEyebrow').textContent = `Welcome back, ${user.full_name.split(' ')[0]}`;
+    document.getElementById('profileName').textContent = user.full_name;
+    const initials = user.full_name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    document.getElementById('avatarInitials').textContent = initials;
+  }
+  document.getElementById('profileChip').addEventListener('click', () => {
+    if(confirm('Log out of CineFlow AI?')) logout();
+  });
+
+  const stats = await authedFetch('/api/dashboard/stats');
+  if(stats){
+    document.getElementById('statTotalProjects').textContent = stats.total_projects;
+    document.getElementById('statProducerMatches').textContent = stats.producer_matches;
+    document.getElementById('statCompleted').textContent = stats.completed;
+    document.getElementById('statFunding').textContent = `$${stats.funding_committed.toLocaleString()}`;
+    document.getElementById('statInProgress').textContent = stats.in_progress;
+  }
+
+  await loadRealActivity();
+}
+
+// Poll for new activity every 8s while the dashboard is open — a simple,
+// honest way to get a "live" feed without building a full websocket/push
+// layer. Only runs while the dashboard page is actually visible.
+setInterval(() => {
+  const dashboardPage = document.getElementById('page-dashboard');
+  if(dashboardPage && dashboardPage.classList.contains('active') && getToken()){
+    loadRealActivity();
+  }
+}, 8000);
+
+document.addEventListener('DOMContentLoaded', loadRealDashboard);
+
+</script>
+<!-- ============ REAL CHAT MODAL (backed by /api/messages) ============ -->
+<div id="chatOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999; align-items:center; justify-content:center;">
+  <div class="card" style="width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; margin:20px;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <div><b id="chatPartnerName" style="font-size:14.5px;">Conversation</b></div>
+      <button class="icon-btn" onclick="closeChatThread()" style="cursor:pointer;">✕</button>
+    </div>
+    <div id="chatMessages" style="flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; min-height:200px;"></div>
+    <div style="padding:14px 16px; border-top:1px solid var(--border); display:flex; gap:8px;">
+      <input type="text" id="chatInput" placeholder="Type a message…" style="flex:1; padding:10px 14px; border-radius:10px; background:var(--bg-2); border:1px solid var(--border); color:var(--text-0); font-family:'Inter',sans-serif; font-size:13.5px; outline:none;" onkeydown="if(event.key==='Enter') sendChatMessage()" />
+      <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
