@@ -1340,13 +1340,39 @@ async function loadRealProjects(){
   }
 
   pg.innerHTML = data.projects.map((p, i) => `
-    <div class="card proj-card">
+    <div class="card proj-card" id="proj-card-${p.project_id}">
       <div class="proj-poster" style="background:${posterGradients[i % posterGradients.length]};"><span>${p.title}</span></div>
       <div class="proj-body">
         <span class="status-chip" style="${statusChipStyle(p.status)}">${p.status}</span>
         <div class="proj-meta">${p.input_mode === 'screenplay' ? 'Screenplay' : 'Idea'} · Created ${new Date(p.created_at).toLocaleDateString()}</div>
+        <button class="btn-delete-project" data-project-id="${p.project_id}" data-project-title="${p.title.replace(/"/g,'&quot;')}" style="margin-top:10px; width:100%; padding:7px; border-radius:8px; border:1px solid rgba(248,113,113,0.35); background:rgba(248,113,113,0.08); color:#F87171; font-size:12px; font-weight:600; cursor:pointer;">Delete project</button>
       </div>
     </div>`).join('');
+
+  pg.querySelectorAll('.btn-delete-project').forEach(btn => {
+    btn.addEventListener('click', () => confirmDeleteProject(btn.dataset.projectId, btn.dataset.projectTitle));
+  });
+}
+
+async function confirmDeleteProject(projectId, title){
+  if(!confirm(`Delete "${title}"? This can't be undone.`)) return;
+  const token = getToken();
+  try {
+    const res = await fetch(`${API_BASE}/api/projects/${projectId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      alert(err.detail || `Could not delete project (${res.status}).`);
+      return;
+    }
+    const card = document.getElementById(`proj-card-${projectId}`);
+    if(card) card.remove();
+    loadRealProjects();
+  } catch(e){
+    alert('Network error deleting project.');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', loadRealProjects);
