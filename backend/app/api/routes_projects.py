@@ -112,6 +112,39 @@ def list_my_projects(current_user: User = Depends(get_current_user), db: Session
     }
 
 
+@router.delete("/{project_id}")
+def delete_project(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently deletes a project. Only the director who owns it can
+    delete it — this is checked here, not just hidden in the UI, so no one
+    can delete another user's project by guessing an id. This removes the
+    Project row itself; the corresponding ClickHouse rows (agent_runs,
+    budget_breakdowns, etc.) are analytics history and are intentionally
+    left in place, matching how the rest of the app treats ClickHouse as an
+    append-only log rather than mutable state."""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not own this project.")
+
+    title = project.title
+    db.delete(project)
+    db.commit()
+
+    log_activity(
+        db, user_id=current_user.id, event_type="project_deleted",
+        title=f"Project deleted: {title}",
+        description="Removed from My Projects.",
+        project_id=None,
+    )
+
+    return {"project_id": project_id, "status": "deleted"}
+
+
 @router.get("/{project_id}/stream")
 async def stream_execution(project_id: str, token: str, db: Session = Depends(get_db)):
     # EventSource cannot send an Authorization header, so the frontend passes
