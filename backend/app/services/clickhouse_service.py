@@ -217,6 +217,63 @@ class ClickHouseService:
         )
         return [dict(zip(result.column_names, row)) for row in result.result_rows]
 
+    def budget_totals_by_category(self) -> list[dict]:
+        """Real spend split across every category the Budget Agent has ever
+        produced (cast, crew, equipment, marketing, ...), summed across all
+        projects. Powers the "Budget Allocation" chart."""
+        client = self._connect()
+        result = client.query(
+            """
+            SELECT category, sum(amount) AS total_amount
+            FROM budget_breakdowns
+            GROUP BY category
+            ORDER BY total_amount DESC
+            """
+        )
+        return [dict(zip(result.column_names, row)) for row in result.result_rows]
+
+    def pipeline_completion_over_time(self) -> list[dict]:
+        """Cumulative count of agent runs that have reached 'completed',
+        bucketed by day. This is real execution history, not a projected
+        timeline — it only grows when an agent genuinely finishes. Powers
+        the "Production Progress" chart."""
+        client = self._connect()
+        result = client.query(
+            """
+            SELECT
+                toDate(completed_at) AS day,
+                count(*) AS completed_that_day
+            FROM agent_runs
+            WHERE status = 'completed' AND completed_at IS NOT NULL
+            GROUP BY day
+            ORDER BY day ASC
+            """
+        )
+        rows = [dict(zip(result.column_names, row)) for row in result.result_rows]
+        running_total = 0
+        for row in rows:
+            running_total += row["completed_that_day"]
+            row["cumulative_completed"] = running_total
+        return rows
+
+    def risk_heatmap(self) -> list[dict]:
+        """Real risk rows bucketed into a probability x impact grid, counted
+        (not invented) — powers the "Risk Heatmap" chart. Probability is
+        bucketed into Low/Medium/High at the 33/66 percentile marks to match
+        `impact`, which is already stored as one of those three strings."""
+        client = self._connect()
+        result = client.query(
+            """
+            SELECT
+                impact,
+                multiIf(probability_pct < 33, 'Low', probability_pct < 66, 'Medium', 'High') AS probability_bucket,
+                count(*) AS n
+            FROM risks
+            GROUP BY impact, probability_bucket
+            """
+        )
+        return [dict(zip(result.column_names, row)) for row in result.result_rows]
+
 
 @lru_cache
 def get_clickhouse_service() -> ClickHouseService:
