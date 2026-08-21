@@ -578,10 +578,10 @@ svg{ display:block; }
 
     <!-- ============ ANALYTICS ============ -->
     <section class="page" id="page-analytics">
-      <div class="pagehead"><div><h1>Analytics</h1><p>Production intelligence for Solstice Horizon.</p></div></div>
+      <div class="pagehead"><div><h1>Analytics</h1><p>Production intelligence — real ClickHouse data across every project you've run.</p></div></div>
       <div class="two-col" style="margin-bottom:18px;">
         <div class="card chart-card"><div class="section-title">Budget Allocation</div><div class="chart-wrap"><canvas id="chartBudget"></canvas></div></div>
-        <div class="card chart-card"><div class="section-title">Department Expenses</div><div class="chart-wrap"><canvas id="chartDept"></canvas></div></div>
+        <div class="card chart-card"><div class="section-title">Agent Execution Time</div><div class="chart-wrap"><canvas id="chartDept"></canvas></div></div>
       </div>
       <div class="two-col">
         <div class="card chart-card"><div class="section-title">Production Progress</div><div class="chart-wrap"><canvas id="chartProgress"></canvas></div></div>
@@ -1351,17 +1351,26 @@ async function loadRealProjects(){
 
 document.addEventListener('DOMContentLoaded', loadRealProjects);
 
-/* ============ HEATMAP ============ */
-const hm = document.getElementById('heatmap');
-const heatVals = [12,45,78,34,20, 60,15,90,25,50, 33,70,10,55,42];
-heatVals.forEach(v=>{
-  const color = v>66 ? '#F87171' : v>33 ? '#FBBF24' : '#34D399';
-  hm.innerHTML += `<div style="height:34px; border-radius:7px; background:${color}; opacity:${0.35+v/150};"></div>`;
-});
-
-/* ============ CHARTS ============ */
+/* ============ CHARTS (real ClickHouse data — see routes_analytics.py) ============ */
 let chartsRendered = false;
-function renderCharts(){
+async function fetchAnalytics(path){
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/analytics/${path}`, {
+    headers: token ? { "Authorization": `Bearer ${token}` } : {}
+  });
+  if(!res.ok) throw new Error(`analytics/${path} returned ${res.status}`);
+  const body = await res.json();
+  return body.data || [];
+}
+
+function showChartEmptyState(canvasId, message){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const wrap = canvas.parentElement;
+  wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-3);font-size:12.5px;text-align:center;padding:20px;">${message}</div>`;
+}
+
+async function renderCharts(){
   if(chartsRendered) return;
   if(typeof Chart === 'undefined'){
     console.warn('Chart.js failed to load — analytics charts will be skipped, but the rest of the app still works.');
@@ -1371,26 +1380,76 @@ function renderCharts(){
   Chart.defaults.color = '#8A93B8';
   Chart.defaults.font.family = "Inter";
 
-  new Chart(document.getElementById('chartBudget'), {
-    type:'doughnut',
-    data:{ labels:['Cast','Crew','Equipment','Marketing','Travel'],
-      datasets:[{ data:[2.7,2.0,1.5,1.2,1.0], backgroundColor:['#8B5CF6','#22D3EE','#2DD4BF','#F472B6','#FB923C'], borderWidth:0 }]},
-    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:14, font:{size:11}}}}, cutout:'62%' }
-  });
+  // --- Budget Allocation: real sum(amount) per category from budget_breakdowns ---
+  try {
+    const budget = await fetchAnalytics('budget-breakdown');
+    if(budget.length === 0){
+      showChartEmptyState('chartBudget', 'No budget data yet — run a project through the pipeline once the Budget Agent is implemented.');
+    } else {
+      const palette = ['#8B5CF6','#22D3EE','#2DD4BF','#F472B6','#FB923C','#A3E635','#FBBF24'];
+      new Chart(document.getElementById('chartBudget'), {
+        type:'doughnut',
+        data:{ labels: budget.map(b=>b.category),
+          datasets:[{ data: budget.map(b=>b.total_amount), backgroundColor: palette, borderWidth:0 }]},
+        options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:14, font:{size:11}}}}, cutout:'62%' }
+      });
+    }
+  } catch(e){ console.warn('Budget chart failed:', e); showChartEmptyState('chartBudget', 'Could not load budget data.'); }
 
-  new Chart(document.getElementById('chartDept'), {
-    type:'bar',
-    data:{ labels:['Camera','Sound','Lighting','Art Dept','VFX','Wardrobe'],
-      datasets:[{ data:[420,180,260,340,610,150], backgroundColor:'#8B5CF6', borderRadius:6 }]},
-    options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(150,163,255,0.08)'}} } }
-  });
+  // --- Agent Execution Time: real avg_duration_ms per agent from agent_runs ---
+  try {
+    const agents = await fetchAnalytics('agents');
+    if(agents.length === 0){
+      showChartEmptyState('chartDept', 'No agent runs yet — submit a project to see real execution times here.');
+    } else {
+      new Chart(document.getElementById('chartDept'), {
+        type:'bar',
+        data:{ labels: agents.map(a=>a.agent_name),
+          datasets:[{ data: agents.map(a=>Math.round(a.avg_duration_ms||0)), backgroundColor:'#8B5CF6', borderRadius:6 }]},
+        options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(150,163,255,0.08)'}, title:{display:true,text:'avg ms'}} } }
+      });
+    }
+  } catch(e){ console.warn('Agent duration chart failed:', e); showChartEmptyState('chartDept', 'Could not load agent execution data.'); }
 
-  new Chart(document.getElementById('chartProgress'), {
-    type:'line',
-    data:{ labels:['W1','W6','W12','W18','W24','W30','W36','W42'],
-      datasets:[{ data:[2,14,30,45,58,74,88,100], borderColor:'#2DD4BF', backgroundColor:'rgba(45,212,191,0.12)', fill:true, tension:0.4, pointRadius:3 }]},
-    options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(150,163,255,0.08)'}} } }
-  });
+  // --- Production Progress: real cumulative completed agent_runs over time ---
+  try {
+    const progress = await fetchAnalytics('pipeline-progress');
+    if(progress.length === 0){
+      showChartEmptyState('chartProgress', 'No completed pipeline runs yet — this fills in as agents finish across all your projects.');
+    } else {
+      new Chart(document.getElementById('chartProgress'), {
+        type:'line',
+        data:{ labels: progress.map(p=>p.day),
+          datasets:[{ data: progress.map(p=>p.cumulative_completed), borderColor:'#2DD4BF', backgroundColor:'rgba(45,212,191,0.12)', fill:true, tension:0.4, pointRadius:3 }]},
+        options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(150,163,255,0.08)'}, title:{display:true,text:'cumulative completed agent runs'}} } }
+      });
+    }
+  } catch(e){ console.warn('Progress chart failed:', e); showChartEmptyState('chartProgress', 'Could not load pipeline progress data.'); }
+
+  // --- Risk Heatmap: real impact x probability_bucket counts from risks table ---
+  try {
+    const risks = await fetchAnalytics('risk-heatmap');
+    const hm = document.getElementById('heatmap');
+    if(risks.length === 0){
+      hm.style.display = 'block';
+      hm.innerHTML = `<div style="color:var(--text-3);font-size:12.5px;padding:14px 0;">No risk assessments yet — this fills in once the Risk Agent evaluates a project.</div>`;
+    } else {
+      const impacts = ['low','medium','high'];
+      const buckets = ['Low','Medium','High'];
+      const grid = {};
+      risks.forEach(r => { grid[`${r.impact}|${r.probability_bucket}`] = r.n; });
+      const maxN = Math.max(...risks.map(r=>r.n), 1);
+      hm.innerHTML = '';
+      impacts.forEach(impact => {
+        buckets.forEach(bucket => {
+          const n = grid[`${impact}|${bucket}`] || 0;
+          const color = impact==='high' ? '#F87171' : impact==='medium' ? '#FBBF24' : '#34D399';
+          const opacity = n===0 ? 0.12 : 0.35 + (n/maxN)*0.65;
+          hm.innerHTML += `<div title="${n} risk(s): ${impact} impact, ${bucket} probability" style="height:34px; border-radius:7px; background:${color}; opacity:${opacity}; display:flex;align-items:center;justify-content:center;font-size:11px;color:#0d0817;font-weight:600;">${n>0?n:''}</div>`;
+        });
+      });
+    }
+  } catch(e){ console.warn('Risk heatmap failed:', e); }
 }
 
 /* ============ WIZARD MODAL ============ */
