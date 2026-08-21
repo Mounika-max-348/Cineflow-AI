@@ -6,6 +6,12 @@ There is no seed script for this list (unlike producers, which start with
 a fictional demo directory): the moment someone signs up as a director,
 routes_auth.register() creates their User row, and that's the only thing
 that makes them show up here — this endpoint just queries User directly.
+
+NOTE: this list intentionally includes the logged-in user themselves. In a
+platform with many real directors you'd normally exclude "yourself" from a
+"browse other directors" page — but while testing/demoing with only one or
+two accounts, showing yourself here confirms the query and rendering path
+actually work end to end rather than showing a misleading empty state.
 """
 from __future__ import annotations
 
@@ -22,7 +28,7 @@ router = APIRouter(prefix="/api/directors", tags=["directors"])
 def list_directors(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     directors = (
         db.query(User)
-        .filter(User.role == "director", User.id != current_user.id, User.is_active == True)  # noqa: E712
+        .filter(User.role == "director", User.is_active == True)  # noqa: E712
         .order_by(User.created_at.desc())
         .all()
     )
