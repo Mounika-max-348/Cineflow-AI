@@ -6,4 +6,4 @@
 // After deploying the backend (Render/Railway/Cloud Run), replace with your
 // real backend URL, e.g. "https://cineflow-backend.onrender.com" — no
 // trailing slash.
-window.API_BASE = "http://localhost:8000";
+window.API_BASE = "https://cineflow-ai-ex0g.onrender.com";
