@@ -31,6 +31,16 @@ app = FastAPI(
 @app.on_event("startup")
 def on_startup():
     init_auth_db()
+    # Render's free tier wipes the SQLite file on every deploy (no
+    # persistent disk), so the producer directory has to be re-seeded
+    # every time the app boots. seed_producers() below is idempotent —
+    # it skips any producer id that already exists — so this is safe to
+    # run on every single startup, not just the first one.
+    try:
+        from scripts.seed_producers import main as seed_producers
+        seed_producers()
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger("cineflow.main").warning("Producer auto-seed skipped: %s", exc)
 
 app.add_middleware(
     CORSMiddleware,
