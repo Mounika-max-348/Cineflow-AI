@@ -47,6 +47,39 @@ def agent_success_rates():
         raise HTTPException(status_code=503, detail=f"ClickHouse unavailable: {exc}") from exc
 
 
+@router.get("/budget-breakdown")
+def budget_breakdown():
+    """Real spend by category, summed across every project's Budget Agent
+    output. Powers the Analytics page's "Budget Allocation" chart."""
+    ch = get_clickhouse_service()
+    try:
+        return {"data": ch.budget_totals_by_category()}
+    except ClickHouseUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=f"ClickHouse unavailable: {exc}") from exc
+
+
+@router.get("/pipeline-progress")
+def pipeline_progress():
+    """Real cumulative agent-completion count over time. Powers the
+    Analytics page's "Production Progress" chart."""
+    ch = get_clickhouse_service()
+    try:
+        return {"data": ch.pipeline_completion_over_time()}
+    except ClickHouseUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=f"ClickHouse unavailable: {exc}") from exc
+
+
+@router.get("/risk-heatmap")
+def risk_heatmap():
+    """Real risk rows bucketed into a probability x impact grid. Powers the
+    Analytics page's "Risk Heatmap" chart."""
+    ch = get_clickhouse_service()
+    try:
+        return {"data": ch.risk_heatmap()}
+    except ClickHouseUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=f"ClickHouse unavailable: {exc}") from exc
+
+
 @router.get("/project/{project_id}")
 def project_timeline(project_id: str):
     ch = get_clickhouse_service()
