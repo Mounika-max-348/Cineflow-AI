@@ -1,9 +1,10 @@
+cat > requirements.txt << 'EOF'
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.0
 sse-starlette==2.2.1
-google-genai>=1.17.0
+google-genai==2.19.0
 clickhouse-connect>=0.8.16
 python-dotenv==1.0.1
 httpx==0.28.1
@@ -13,5 +14,6 @@ sqlalchemy==2.0.36
 bcrypt==4.2.1
 python-jose[cryptography]==3.3.0
 email-validator==2.2.0
-google-adk
-mcp-clickhouse
+google-adk==2.6.3
+mcp-clickhouse==0.4.1
+EOF
